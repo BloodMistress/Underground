@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: b78f33ed7743a8749bc6d4b62e2ef851
+guid: 25a88357660d1614eb40ccc2036148e6
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -7,18 +7,8 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: emission
-    second: {fileID: 2100000, guid: 4834d6c2600faae42bdb3b3b98f94a59, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: oceanShader
-    second: {fileID: 2100000, guid: 1b633da83ea778d4c8235f1c44b44131, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: phong1.001
-    second: {fileID: 2100000, guid: 81f8eca2a0055094bb1694e7e3446686, type: 2}
+      name: smallStairsToSecLoc
+    second: {fileID: 2100000, guid: d2d51d4be6220fc4b9db19cea198d4cc, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

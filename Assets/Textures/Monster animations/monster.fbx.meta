@@ -1,24 +1,9 @@
 fileFormatVersion: 2
-guid: b78f33ed7743a8749bc6d4b62e2ef851
+guid: 80aedb01c6d3ea840ac511bb20e69c06
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: emission
-    second: {fileID: 2100000, guid: 4834d6c2600faae42bdb3b3b98f94a59, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: oceanShader
-    second: {fileID: 2100000, guid: 1b633da83ea778d4c8235f1c44b44131, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: phong1.001
-    second: {fileID: 2100000, guid: 81f8eca2a0055094bb1694e7e3446686, type: 2}
+  externalObjects: {}
   materials:
     materialImportMode: 2
     materialName: 0
