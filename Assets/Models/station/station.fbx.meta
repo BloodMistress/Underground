@@ -1,0 +1,300 @@
+fileFormatVersion: 2
+guid: 785dd2e41896bb445a3d06f1628668e3
+ModelImporter:
+  serializedVersion: 24200
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Orangewalls
+    second: {fileID: 2100000, guid: 7ba5a43c9c567174ebd4f75deffa3ab5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: downWalls
+    second: {fileID: 2100000, guid: 6789ebc16846ca443ae45edf2e7e7fcb, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: emergancy
+    second: {fileID: 2100000, guid: 7032381b1249db44d9a464b20ef3e6fd, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: floor
+    second: {fileID: 2100000, guid: 2205f40aa71cb964e841ca8427416f70, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: locationCeil
+    second: {fileID: 2100000, guid: c32e1a1f8367b294aac9c63f88ae9357, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: road_rails
+    second: {fileID: 2100000, guid: 6ff545938c4c4554f956edab55791946, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: stone
+    second: {fileID: 2100000, guid: 552732cb68526e34cbe3e45522cc645b, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: TactilePaving
+    second: {fileID: 2800000, guid: 9173c1d6c6b0f69469cad7ee8ccf4281, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_Orangewalls_BaseColor
+    second: {fileID: 2800000, guid: 0845e2f91a573354f86b787f4f0723b3, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_Orangewalls_Emissive
+    second: {fileID: 2800000, guid: 6735b6ce4bb00874aaf7c476b9d45d58, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_Orangewalls_Metallic
+    second: {fileID: 2800000, guid: 4f42a50741f73524c884e38dcca750c6, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_Orangewalls_Normal
+    second: {fileID: 2800000, guid: 41a48c70c7146284692a53cae117eddc, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_Orangewalls_Roughness
+    second: {fileID: 2800000, guid: ae3b3d85214a35547b58fa425ece7ee1, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_downWalls_BaseColor
+    second: {fileID: 2800000, guid: 82e623782ebc9704dbab8ef2ae34ed8b, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_downWalls_Emissive
+    second: {fileID: 2800000, guid: 43dbf949043a9e845a76ebd4ad0806df, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_downWalls_Metallic
+    second: {fileID: 2800000, guid: 8ab6092131390cb45842b61f0b9eebba, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_downWalls_Normal
+    second: {fileID: 2800000, guid: 8155fda50b8b9ad4086af706544797c4, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_downWalls_Roughness
+    second: {fileID: 2800000, guid: ffbc2d251636e164cb5c8a375e01983e, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_floor_BaseColor
+    second: {fileID: 2800000, guid: 91bceba84b514a24dbe7512779dc7858, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_floor_Emissive
+    second: {fileID: 2800000, guid: 3d91cc8d51e23d14599487a69bda1363, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_floor_Metallic
+    second: {fileID: 2800000, guid: e2a49ae5a9edae74c9f073671db666ee, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_floor_Normal
+    second: {fileID: 2800000, guid: e5d81e197a072724abe08626633c8051, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_floor_Roughness
+    second: {fileID: 2800000, guid: 40b40fb0e47e3504789410c68b916947, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_locationCeil_BaseColor
+    second: {fileID: 2800000, guid: 01f6fb784844a224e9ed5b2427328e66, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_locationCeil_Emissive
+    second: {fileID: 2800000, guid: 9166f45bdbe66cc4f86f17375665016d, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_locationCeil_Metallic
+    second: {fileID: 2800000, guid: c5a58540fa080d2419e38d31884b3d41, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_locationCeil_Normal
+    second: {fileID: 2800000, guid: fa6f70eb3494b4a4b96800e2765f4521, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_locationCeil_Roughness
+    second: {fileID: 2800000, guid: 9e21fde7d79714248ba87cb07d1f3932, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_road_rails_BaseColor
+    second: {fileID: 2800000, guid: a9628f44e684fc54aa8a8b3c457ef5dc, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_road_rails_Emissive
+    second: {fileID: 2800000, guid: 0a5fff99846ef2d4da794c00ad356dc0, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_road_rails_Metallic
+    second: {fileID: 2800000, guid: a651d75f7537bba45837e9ceeb261768, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_road_rails_Normal
+    second: {fileID: 2800000, guid: b6275156c48255c498f4cc9842d7e192, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_road_rails_Roughness
+    second: {fileID: 2800000, guid: 1f781b4a89f1bbc4eb8579e43516cffa, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_stone_BaseColor
+    second: {fileID: 2800000, guid: a531dba3e9080a44d8cba23bd1a9ee75, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_stone_Emissive
+    second: {fileID: 2800000, guid: a4fb034811fe01346aa61d002ebc360a, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_stone_Metallic
+    second: {fileID: 2800000, guid: 61bd949f47560c348bb7089d69eb1a5f, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_stone_Normal
+    second: {fileID: 2800000, guid: 082a18ec52ea1f1428e00561a795bd2c, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: location_stone_Roughness
+    second: {fileID: 2800000, guid: 06d29a24b1ae3ff4595319471298cd8a, type: 3}
+  materials:
+    materialImportMode: 2
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 0
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    importPhysicalCameras: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    nodeNameCollisionStrategy: 1
+    fileIdsGeneration: 2
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    keepQuads: 0
+    weldVertices: 1
+    bakeAxisConversion: 0
+    preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    meshOptimizationFlags: -1
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 1
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    strictVertexDataChecks: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  referencedClips: []
+  importAnimation: 1
+  humanDescription:
+    serializedVersion: 3
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    globalScale: 1
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
+  animationType: 2
+  humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 1
+  importBlendShapeDeformPercent: 1
+  remapMaterialsIfMaterialImportModeIsNone: 0
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
