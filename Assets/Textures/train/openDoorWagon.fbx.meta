@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: d03ef3af31362f644990d0f26599bf84
+guid: 97aab06d95006884288a717827ba749b
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -14,6 +14,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: Bottom Plastik
     second: {fileID: 2100000, guid: e2a0704e9379a3d439c3269aaffc2ec0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Floor
+    second: {fileID: 2100000, guid: 80866224a0970184bacffbfa0dacb9c1, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -107,6 +112,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: fence
+    second: {fileID: 2100000, guid: 13c7c78d1981b3d489fbffccb15858e1, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: handhold
     second: {fileID: 2100000, guid: 16cb2bb1c640a6949af868ee41e4a1a4, type: 2}
   - first:
@@ -114,11 +124,6 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: metal
     second: {fileID: 2100000, guid: 13c7c78d1981b3d489fbffccb15858e1, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: metal_01
-    second: {fileID: 2100000, guid: fc1db16feb10fd44fbaa5671f388230b, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
