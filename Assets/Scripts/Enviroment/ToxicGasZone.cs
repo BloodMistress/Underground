@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
-public class WaterZone : MonoBehaviour
+public class ToxicGasZone : MonoBehaviour
 {
     [SerializeField] private bool configureColliderAsTrigger = true;
 
@@ -23,7 +23,7 @@ public class WaterZone : MonoBehaviour
         OxygenSystem oxygen = other.GetComponentInParent<OxygenSystem>();
         if (oxygen != null)
         {
-            oxygen.EnterWaterZone();
+            oxygen.EnterToxicGasZone();
         }
     }
 
@@ -32,7 +32,7 @@ public class WaterZone : MonoBehaviour
         OxygenSystem oxygen = other.GetComponentInParent<OxygenSystem>();
         if (oxygen != null)
         {
-            oxygen.ExitWaterZone();
+            oxygen.ExitToxicGasZone();
         }
     }
 

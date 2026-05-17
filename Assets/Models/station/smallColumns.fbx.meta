@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 838e14163d46efb4c839f934aa2da6f8
+guid: cffe9720af6bc424ebe15d837fece278
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
@@ -7,13 +7,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: M_Stairs
-    second: {fileID: 2100000, guid: bfbb2a7a66cb17549aebd73d930171e9, type: 2}
+      name: ConcreteBare
+    second: {fileID: 2100000, guid: 467a4de62a934b54b8c61d2ec2d9adc0, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
-      name: StairsUp
-    second: {fileID: 2100000, guid: a4e08486061ccf448834799a717ffc5a, type: 2}
+      name: Tiles
+    second: {fileID: 2100000, guid: 1c79fde9ed59ff344ba431b9a6a61523, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: tile_tile
+    second: {fileID: 2100000, guid: 811a625a3724a90468a56d2ce64cc8f8, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

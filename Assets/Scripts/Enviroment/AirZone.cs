@@ -1,20 +1,47 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public class AirZone : MonoBehaviour
 {
+    [SerializeField] private bool configureColliderAsTrigger = true;
+
+    private void Reset()
+    {
+        ConfigureCollider();
+    }
+
+    private void Awake()
+    {
+        if (configureColliderAsTrigger)
+        {
+            ConfigureCollider();
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        OxygenSystem oxygen = other.GetComponentInParent<OxygenSystem>();
+        if (oxygen != null)
         {
-            other.GetComponent<OxygenSystem>().inAirZone = true;
+            oxygen.EnterAirZone();
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
+        OxygenSystem oxygen = other.GetComponentInParent<OxygenSystem>();
+        if (oxygen != null)
         {
-            other.GetComponent<OxygenSystem>().inAirZone = false;
+            oxygen.ExitAirZone();
+        }
+    }
+
+    private void ConfigureCollider()
+    {
+        Collider zoneCollider = GetComponent<Collider>();
+        if (zoneCollider != null)
+        {
+            zoneCollider.isTrigger = true;
         }
     }
 }
