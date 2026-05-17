@@ -7,16 +7,16 @@ public class MetroHUD : MonoBehaviour
 {
     [Header("Oxygen")]
     [SerializeField] private Sprite oxygenTankSprite;
-    [SerializeField] private Vector2 oxygenTankSize = new Vector2(320f, 61f);
+    [SerializeField] private Vector2 oxygenTankSize = new Vector2(340f, 64f);
     [SerializeField] private Vector2 oxygenTankPosition = new Vector2(18f, -18f);
-    [SerializeField] private Vector2 oxygenSliderSize = new Vector2(168f, 11f);
-    [SerializeField] private Vector2 oxygenSliderOffset = new Vector2(111f, -3f);
+    [SerializeField] private Vector2 oxygenSliderSize = new Vector2(166f, 13f);
+    [SerializeField] private Vector2 oxygenSliderOffset = new Vector2(88f, -1.5f);
     [SerializeField] private Color oxygenFillColor = new Color(0.58f, 0.88f, 0.93f, 1f);
 
     [Header("Inventory")]
     [SerializeField] private Sprite inventoryTitleSprite;
     [SerializeField] private Sprite equipmentSlotSprite;
-    [SerializeField] private Vector2 inventoryPosition = new Vector2(0f, 34f);
+    [SerializeField] private Vector2 inventoryPosition = new Vector2(-126f, 34f);
     [SerializeField] private Vector2 titleSize = new Vector2(135f, 52f);
     [SerializeField] private Vector2 slotSize = new Vector2(62f, 58f);
     [SerializeField] private float slotSpacing = 74f;
@@ -112,7 +112,7 @@ public class MetroHUD : MonoBehaviour
 
     private void BuildInventoryHUD()
     {
-        RectTransform panel = CreateRect("InventoryHUD", transform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), inventoryPosition, new Vector2(260f, 120f));
+        RectTransform panel = CreateRect("InventoryHUD", transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), inventoryPosition, new Vector2(260f, 120f));
 
         RectTransform title = CreateRect("InventoryTitle", panel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), titleSize);
         Image titleImage = GetOrAdd<Image>(title.gameObject);
