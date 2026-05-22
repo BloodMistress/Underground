@@ -11,6 +11,10 @@ public class OxygenSystem : MonoBehaviour
     [SerializeField] private float waterDrainRate = 9f;
     [SerializeField] private float recoveryRate = 8f;
 
+    [Header("Breathing Check")]
+    [SerializeField] private Transform breathingPoint;
+    [SerializeField] private bool useMainCameraAsBreathingPoint = true;
+
     [Header("UI")]
     [SerializeField] private Slider oxygenSlider;
 
@@ -25,13 +29,14 @@ public class OxygenSystem : MonoBehaviour
     public float CurrentOxygen => _oxygen;
     public float MaxOxygen => maxOxygen;
     public float Oxygen01 => maxOxygen <= 0f ? 0f : _oxygen / maxOxygen;
-    public bool IsInWater => _waterZoneCount > 0;
+    public bool IsInWater => IsBreathingPointInWater();
     public bool IsInToxicGas => _toxicGasZoneCount > 0;
     public bool IsInBreathHazard => IsInWater || IsInToxicGas;
 
     private void Awake()
     {
         _oxygen = Mathf.Clamp(startOxygen, 0f, maxOxygen);
+        ResolveBreathingPoint();
 
         if (oxygenSlider == null)
         {
@@ -48,6 +53,7 @@ public class OxygenSystem : MonoBehaviour
             return;
         }
 
+        ResolveBreathingPoint();
         UpdateOxygen(Time.deltaTime);
         RefreshUI();
 
@@ -112,6 +118,39 @@ public class OxygenSystem : MonoBehaviour
         }
 
         _oxygen = Mathf.Clamp(_oxygen - drainRate * deltaTime, 0f, maxOxygen);
+    }
+
+    private bool IsBreathingPointInWater()
+    {
+        if (breathingPoint != null)
+        {
+            return WaterZone.ContainsPoint(breathingPoint.position);
+        }
+
+        return _waterZoneCount > 0;
+    }
+
+    private void ResolveBreathingPoint()
+    {
+        if (breathingPoint != null || !useMainCameraAsBreathingPoint)
+        {
+            return;
+        }
+
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            breathingPoint = mainCamera.transform;
+            return;
+        }
+
+        Transform cameraTarget = transform.Find("PlayerCameraRoot");
+        if (cameraTarget == null)
+        {
+            cameraTarget = transform.Find("CinemachineCameraTarget");
+        }
+
+        breathingPoint = cameraTarget;
     }
 
     private void RefreshUI()

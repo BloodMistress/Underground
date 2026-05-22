@@ -135,6 +135,7 @@ namespace StarterAssets
 
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
+            RotationSpeed = Mathf.Clamp(PlayerPrefs.GetFloat("settings.mouseSensitivity", RotationSpeed), 0.25f, 4.0f);
         }
 
         private void Update()
