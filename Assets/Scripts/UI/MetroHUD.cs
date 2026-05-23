@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,6 +6,8 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Canvas))]
 public class MetroHUD : MonoBehaviour
 {
+    private static MetroHUD _instance;
+
     [Header("Oxygen")]
     [SerializeField] private Sprite oxygenTankSprite;
     [SerializeField] private Vector2 oxygenTankSize = new Vector2(340f, 64f);
@@ -19,14 +22,50 @@ public class MetroHUD : MonoBehaviour
     [SerializeField] private Vector2 inventoryPosition = new Vector2(-126f, 34f);
     [SerializeField] private Vector2 titleSize = new Vector2(135f, 52f);
     [SerializeField] private Vector2 slotSize = new Vector2(62f, 58f);
+    [SerializeField] private Vector2 itemIconSize = new Vector2(46f, 46f);
     [SerializeField] private float slotSpacing = 74f;
     [SerializeField] private int visibleSlots = 3;
 
+    private readonly List<Image> _itemImages = new List<Image>();
+
     private void Awake()
     {
+        _instance = this;
         ConfigureCanvas();
         BuildOxygenHUD();
         BuildInventoryHUD();
+    }
+
+    public static bool TryAddInventoryItem(Sprite itemSprite)
+    {
+        if (_instance == null)
+        {
+            _instance = FindFirstObjectByType<MetroHUD>();
+        }
+
+        return _instance != null && _instance.AddInventoryItem(itemSprite);
+    }
+
+    private bool AddInventoryItem(Sprite itemSprite)
+    {
+        if (itemSprite == null)
+        {
+            return false;
+        }
+
+        foreach (Image itemImage in _itemImages)
+        {
+            if (itemImage.sprite != null)
+            {
+                continue;
+            }
+
+            itemImage.sprite = itemSprite;
+            itemImage.enabled = true;
+            return true;
+        }
+
+        return false;
     }
 
     private void ConfigureCanvas()
@@ -112,6 +151,7 @@ public class MetroHUD : MonoBehaviour
 
     private void BuildInventoryHUD()
     {
+        _itemImages.Clear();
         RectTransform panel = CreateRect("InventoryHUD", transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), inventoryPosition, new Vector2(260f, 120f));
 
         RectTransform title = CreateRect("InventoryTitle", panel, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, 0f), titleSize);
@@ -130,6 +170,16 @@ public class MetroHUD : MonoBehaviour
             slotImage.color = Color.white;
             slotImage.raycastTarget = false;
             slotImage.preserveAspect = true;
+
+            RectTransform item = CreateRect("ItemIcon", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, itemIconSize);
+            Image itemImage = GetOrAdd<Image>(item.gameObject);
+            itemImage.sprite = null;
+            itemImage.enabled = false;
+            itemImage.color = Color.white;
+            itemImage.raycastTarget = false;
+            itemImage.preserveAspect = true;
+            item.SetAsLastSibling();
+            _itemImages.Add(itemImage);
         }
     }
 

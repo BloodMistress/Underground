@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4135013735270702856}
   m_Layer: 0
-  m_Name: PlayerCameraRoot
+  m_Name:PlayerCameraRoot
   m_TagString: CinemachineTarget
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 5393215578589016655}
   - component: {fileID: 5393215578589016640}
   m_Layer: 8
-  m_Name: Capsule
+  m_Name:Capsule
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -154,6 +154,8 @@ GameObject:
   - component: {fileID: 8616685848737228376}
   - component: {fileID: 8616685848737228390}
   - component: {fileID: 8616685848737228391}
+  - component: {fileID: 8616685848737228392}
+  - component: {fileID: 8616685848737228393}
   m_Layer: 8
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -273,6 +275,48 @@ MonoBehaviour:
   sprintNoiseRadius: 10
   crouchNoiseRadius: 2
   minAudibleSpeed: 0.15
+--- !u!114 &8616685848737228392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f58f4e82f2249e39e610cf23897b81c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  openDoorKey: 113
+  interactionOrigin: {fileID: 4135013735270702856}
+  interactionDistance: 3
+  doorSearchRadius: 2.2
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  openAngle: 90
+  openSpeed: 180
+  hingeAxis: {x: 0, y: 1, z: 0}
+--- !u!114 &8616685848737228393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4c6c7b1d0da42a4abec39ee23ed18ae, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  interactKey: 101
+  interactionOrigin: {fileID: 4135013735270702856}
+  interactionDistance: 3
+  pickupSearchRadius: 1.4
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  bucketIcon: {fileID: 21300000, guid: 0536d8c683bfdb94c99ec813b817a826, type: 3}
 --- !u!114 &1978471637655604388
 MonoBehaviour:
   m_ObjectHideFlags: 0

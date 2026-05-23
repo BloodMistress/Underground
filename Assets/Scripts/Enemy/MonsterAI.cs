@@ -63,6 +63,7 @@ public class MonsterAI : MonoBehaviour
     private float _lostSightTimer;
     private float _suspicion;
     private Vector3 _lastKnownPlayerPosition;
+    private bool _hasCaughtPlayer;
 
     private void Awake()
     {
@@ -314,9 +315,15 @@ public class MonsterAI : MonoBehaviour
 
     private void CatchPlayer()
     {
+        if (_hasCaughtPlayer)
+        {
+            return;
+        }
+
+        _hasCaughtPlayer = true;
         Debug.Log("Monster caught the player.");
         onPlayerCaught?.Invoke();
-        Time.timeScale = 0f;
+        GameOverScreen.ShowGameOver();
     }
 
     private void UpdateAnimation()

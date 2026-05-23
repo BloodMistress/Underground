@@ -9,7 +9,7 @@ public class MenuUI : MonoBehaviour
 
     private const string SettingsTitle = "\u041d\u0410\u0421\u0422\u0420\u041e\u0419\u041a\u0418";
     private const string VolumeLabel = "\u0413\u0420\u041e\u041c\u041a\u041e\u0421\u0422\u042c";
-    private const string SensitivityLabel = "\u0427\u0443\u0432\u0441\u0442\u0432\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0441\u0442\u044c \u043c\u044b\u0448\u0438";
+    private const string SensitivityLabel = "\u0427\u0423\u0412\u0421\u0422\u0412\u0418\u0422\u0415\u041b\u042c\u041d\u041e\u0421\u0422\u042c \u041c\u042b\u0428\u0418";
     private const string BackLabel = "\u041d\u0410\u0417\u0410\u0414";
 
     private Canvas _canvas;

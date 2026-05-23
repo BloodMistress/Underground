@@ -170,6 +170,6 @@ public class OxygenSystem : MonoBehaviour
         _isDead = true;
         Debug.Log("Player ran out of oxygen.");
         onOxygenEmpty?.Invoke();
-        Time.timeScale = 0f;
+        GameOverScreen.ShowGameOver();
     }
 }
