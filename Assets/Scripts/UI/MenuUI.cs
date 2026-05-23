@@ -79,12 +79,12 @@ public class MenuUI : MonoBehaviour
 
         _settingsPanel = CreatePanel(_canvas.transform);
         CreateLabel(_settingsPanel.transform, SettingsTitle, new Vector2(0f, 185f), 42f, FontStyles.Bold);
-        CreateLabel(_settingsPanel.transform, VolumeLabel, new Vector2(-220f, 75f), 24f, FontStyles.Normal);
-        _volumeSlider = CreateSlider(_settingsPanel.transform, new Vector2(115f, 75f), 0f, 1f, GameSettings.GetMasterVolume());
+        CreateLabel(_settingsPanel.transform, VolumeLabel, new Vector2(-360f, 75f), 24f, FontStyles.Normal);
+        _volumeSlider = CreateSlider(_settingsPanel.transform, new Vector2(160f, 75f), 0f, 1f, GameSettings.GetMasterVolume());
         _volumeSlider.onValueChanged.AddListener(GameSettings.SetMasterVolume);
 
-        CreateLabel(_settingsPanel.transform, SensitivityLabel, new Vector2(-220f, -20f), 24f, FontStyles.Normal);
-        _sensitivitySlider = CreateSlider(_settingsPanel.transform, new Vector2(115f, -20f), 0.25f, 4f, GameSettings.GetMouseSensitivity());
+        CreateLabel(_settingsPanel.transform, SensitivityLabel, new Vector2(-360f, -20f), 21f, FontStyles.Normal);
+        _sensitivitySlider = CreateSlider(_settingsPanel.transform, new Vector2(160f, -20f), 0.25f, 4f, GameSettings.GetMouseSensitivity());
         _sensitivitySlider.onValueChanged.AddListener(GameSettings.SetMouseSensitivity);
 
         CreateButton(_settingsPanel.transform, BackLabel, new Vector2(0f, -155f), HideSettings);
@@ -119,7 +119,7 @@ public class MenuUI : MonoBehaviour
         rect.anchorMin = new Vector2(0.5f, 0.5f);
         rect.anchorMax = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = position;
-        rect.sizeDelta = new Vector2(520f, 60f);
+        rect.sizeDelta = new Vector2(390f, 60f);
 
         TextMeshProUGUI tmp = label.GetComponent<TextMeshProUGUI>();
         tmp.text = text;

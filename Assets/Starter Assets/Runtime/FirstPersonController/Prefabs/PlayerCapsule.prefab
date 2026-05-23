@@ -312,7 +312,8 @@ MonoBehaviour:
   interactKey: 101
   interactionOrigin: {fileID: 4135013735270702856}
   interactionDistance: 3
-  pickupSearchRadius: 1.4
+  pickupSearchRadius: 1.6
+  maxLookAngle: 65
   interactionMask:
     serializedVersion: 2
     m_Bits: 4294967295

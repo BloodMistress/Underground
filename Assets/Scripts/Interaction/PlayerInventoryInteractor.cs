@@ -11,8 +11,8 @@ public class PlayerInventoryInteractor : MonoBehaviour
     [Header("Detection")]
     [SerializeField] private Transform interactionOrigin;
     [SerializeField] private float interactionDistance = 3f;
-    [SerializeField] private float pickupSearchRadius = 1.4f;
-    [SerializeField] private LayerMask interactionMask = ~0;
+    [SerializeField] private float pickupSearchRadius = 1.6f;
+    [SerializeField] private float maxLookAngle = 65f;
 
     [Header("Items")]
     [SerializeField] private Sprite bucketIcon;
@@ -45,13 +45,7 @@ public class PlayerInventoryInteractor : MonoBehaviour
             return;
         }
 
-        Vector3 searchPoint = interactionOrigin.position + interactionOrigin.forward * interactionDistance;
-        if (Physics.Raycast(interactionOrigin.position, interactionOrigin.forward, out RaycastHit hit, interactionDistance, interactionMask, QueryTriggerInteraction.Ignore))
-        {
-            searchPoint = hit.point;
-        }
-
-        Transform bucket = FindNearestBucket(searchPoint);
+        Transform bucket = FindNearestBucket();
         if (bucket == null)
         {
             return;
@@ -65,10 +59,10 @@ public class PlayerInventoryInteractor : MonoBehaviour
         bucket.gameObject.SetActive(false);
     }
 
-    private Transform FindNearestBucket(Vector3 searchPoint)
+    private Transform FindNearestBucket()
     {
         Transform nearest = null;
-        float bestSqrDistance = pickupSearchRadius * pickupSearchRadius;
+        float bestScore = float.PositiveInfinity;
         Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         foreach (Renderer renderer in renderers)
@@ -79,10 +73,31 @@ public class PlayerInventoryInteractor : MonoBehaviour
                 continue;
             }
 
-            float sqrDistance = (renderer.bounds.ClosestPoint(searchPoint) - searchPoint).sqrMagnitude;
-            if (sqrDistance < bestSqrDistance)
+            Vector3 target = renderer.bounds.center;
+            Vector3 toTarget = target - interactionOrigin.position;
+            float forwardDistance = Vector3.Dot(interactionOrigin.forward, toTarget);
+            if (forwardDistance < 0f || forwardDistance > interactionDistance)
             {
-                bestSqrDistance = sqrDistance;
+                continue;
+            }
+
+            float angle = Vector3.Angle(interactionOrigin.forward, toTarget.normalized);
+            if (angle > maxLookAngle)
+            {
+                continue;
+            }
+
+            Vector3 closestPointOnLook = interactionOrigin.position + interactionOrigin.forward * forwardDistance;
+            float sideDistance = Vector3.Distance(renderer.bounds.ClosestPoint(closestPointOnLook), closestPointOnLook);
+            if (sideDistance > pickupSearchRadius)
+            {
+                continue;
+            }
+
+            float score = forwardDistance + sideDistance * 2f;
+            if (score < bestScore)
+            {
+                bestScore = score;
                 nearest = bucketRoot;
             }
         }
@@ -108,7 +123,7 @@ public class PlayerInventoryInteractor : MonoBehaviour
 
     private static string NormalizeName(string objectName)
     {
-        return objectName.ToLowerInvariant().Replace(' ', '_');
+        return objectName.ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty);
     }
 
     private void ResolveInteractionOrigin()

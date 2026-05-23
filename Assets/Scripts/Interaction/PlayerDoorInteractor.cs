@@ -12,7 +12,7 @@ public class PlayerDoorInteractor : MonoBehaviour
     [Header("Detection")]
     [SerializeField] private Transform interactionOrigin;
     [SerializeField] private float interactionDistance = 3f;
-    [SerializeField] private float doorSearchRadius = 2.2f;
+    [SerializeField] private float doorSearchRadius = 2.4f;
     [SerializeField] private LayerMask interactionMask = ~0;
 
     [Header("Door Motion")]
@@ -20,10 +20,12 @@ public class PlayerDoorInteractor : MonoBehaviour
     [SerializeField] private float openSpeed = 180f;
     [SerializeField] private Vector3 hingeAxis = Vector3.up;
 
+    private readonly List<Transform> _runtimeDoors = new List<Transform>();
     private Camera _mainCamera;
 
     private void Start()
     {
+        RefreshRuntimeDoors();
         EnsureAllDoorColliders();
     }
 
@@ -53,136 +55,144 @@ public class PlayerDoorInteractor : MonoBehaviour
             return;
         }
 
+        if (_runtimeDoors.Count == 0)
+        {
+            RefreshRuntimeDoors();
+        }
+
         Vector3 searchPoint = interactionOrigin.position + interactionOrigin.forward * interactionDistance;
         if (Physics.Raycast(interactionOrigin.position, interactionOrigin.forward, out RaycastHit hit, interactionDistance, interactionMask, QueryTriggerInteraction.Ignore))
         {
             searchPoint = hit.point;
         }
 
-        Transform doorAssembly = FindNearestDoorAssembly(searchPoint);
-        if (doorAssembly == null)
+        Transform doorRoot = FindNearestDoor(searchPoint);
+        if (doorRoot == null)
         {
             return;
         }
 
-        Transform movingDoor = FindMovingDoorPart(doorAssembly);
-        if (movingDoor == null)
-        {
-            return;
-        }
-
-        RuntimeSwingDoor door = movingDoor.GetComponent<RuntimeSwingDoor>();
+        Transform pivot = FindDoorPivot(doorRoot);
+        RuntimePivotDoor door = doorRoot.GetComponent<RuntimePivotDoor>();
         if (door == null)
         {
-            door = movingDoor.gameObject.AddComponent<RuntimeSwingDoor>();
-            door.Configure(openAngle, openSpeed, GetSwingDirection(movingDoor), hingeAxis);
-            EnsureDoorCollider(movingDoor);
+            door = doorRoot.gameObject.AddComponent<RuntimePivotDoor>();
+            door.Configure(pivot, openAngle, openSpeed, GetSwingDirection(doorRoot), hingeAxis);
+            EnsureDoorCollider(doorRoot);
         }
 
         door.Toggle();
     }
 
-    private void EnsureAllDoorColliders()
+    private void RefreshRuntimeDoors()
     {
-        List<Transform> doorAssemblies = new List<Transform>();
-        Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-        foreach (Renderer renderer in renderers)
+        _runtimeDoors.Clear();
+        Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (Transform candidate in transforms)
         {
-            Transform doorAssembly = FindDoorAssembly(renderer.transform);
-            if (doorAssembly == null || doorAssemblies.Contains(doorAssembly))
+            if (IsRuntimeDoor(candidate))
             {
-                continue;
-            }
-
-            doorAssemblies.Add(doorAssembly);
-            Transform movingDoor = FindMovingDoorPart(doorAssembly);
-            if (movingDoor != null)
-            {
-                EnsureDoorCollider(movingDoor);
+                _runtimeDoors.Add(candidate);
             }
         }
     }
-    private Transform FindNearestDoorAssembly(Vector3 searchPoint)
-    {
-        Transform nearestDoor = null;
-        float bestSqrDistance = doorSearchRadius * doorSearchRadius;
-        Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
-        foreach (Renderer renderer in renderers)
+    private Transform FindNearestDoor(Vector3 searchPoint)
+    {
+        Transform nearest = null;
+        float bestSqrDistance = doorSearchRadius * doorSearchRadius;
+
+        foreach (Transform door in _runtimeDoors)
         {
-            Transform doorAssembly = FindDoorAssembly(renderer.transform);
-            if (doorAssembly == null)
+            if (door == null || !door.gameObject.activeInHierarchy)
             {
                 continue;
             }
 
-            float sqrDistance = (renderer.bounds.ClosestPoint(searchPoint) - searchPoint).sqrMagnitude;
+            float sqrDistance = DistanceToDoorSqr(door, searchPoint);
             if (sqrDistance < bestSqrDistance)
             {
                 bestSqrDistance = sqrDistance;
-                nearestDoor = doorAssembly;
+                nearest = door;
             }
         }
 
-        return nearestDoor;
+        return nearest;
     }
 
-    private static Transform FindDoorAssembly(Transform candidate)
+    private static float DistanceToDoorSqr(Transform door, Vector3 searchPoint)
     {
-        Transform current = candidate;
-        while (current != null)
+        Renderer[] renderers = door.GetComponentsInChildren<Renderer>(true);
+        if (renderers.Length == 0)
         {
-            if (IsDoorAssemblyName(current.name) && HasNewDoorRoot(current))
-            {
-                return current;
-            }
-
-            current = current.parent;
+            return (door.position - searchPoint).sqrMagnitude;
         }
 
-        return null;
-    }
-
-    private static Transform FindMovingDoorPart(Transform doorAssembly)
-    {
-        Transform best = null;
-        Renderer[] renderers = doorAssembly.GetComponentsInChildren<Renderer>(true);
+        float best = float.PositiveInfinity;
         foreach (Renderer renderer in renderers)
         {
-            Transform candidate = renderer.transform;
-            if (candidate == doorAssembly)
+            float sqr = (renderer.bounds.ClosestPoint(searchPoint) - searchPoint).sqrMagnitude;
+            if (sqr < best)
             {
-                continue;
-            }
-
-            string normalized = NormalizeName(candidate.name);
-            if (normalized.Contains("doorway") || normalized.Contains("frame") || normalized.Contains("jamb"))
-            {
-                continue;
-            }
-
-            if (normalized.Contains("door") || normalized.Contains("metal"))
-            {
-                return candidate;
-            }
-
-            if (best == null)
-            {
-                best = candidate;
+                best = sqr;
             }
         }
 
-        return best != null ? best : doorAssembly;
+        return best;
     }
 
-    private static void EnsureDoorCollider(Transform movingDoor)
+    private static bool IsRuntimeDoor(Transform candidate)
     {
-        if (movingDoor.GetComponentInChildren<Collider>() != null)
+        string normalized = NormalizeName(candidate.name);
+        if (normalized != "door" && normalized != "door2" && normalized != "door3")
+        {
+            return false;
+        }
+
+        Transform parent = candidate.parent;
+        return parent != null && NormalizeName(parent.name) == "doors";
+    }
+
+    private static Transform FindDoorPivot(Transform doorRoot)
+    {
+        Transform[] children = doorRoot.GetComponentsInChildren<Transform>(true);
+        foreach (Transform child in children)
+        {
+            if (child == doorRoot)
+            {
+                continue;
+            }
+
+            string normalized = NormalizeName(child.name);
+            if (normalized.Contains("pivot") || normalized.Contains("hinge"))
+            {
+                return child;
+            }
+        }
+
+        return doorRoot;
+    }
+
+    private static void EnsureAllDoorColliders()
+    {
+        Transform[] transforms = FindObjectsByType<Transform>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        foreach (Transform candidate in transforms)
+        {
+            if (IsRuntimeDoor(candidate))
+            {
+                EnsureDoorCollider(candidate);
+            }
+        }
+    }
+
+    private static void EnsureDoorCollider(Transform doorRoot)
+    {
+        if (doorRoot.GetComponentInChildren<Collider>() != null)
         {
             return;
         }
 
-        Renderer[] renderers = movingDoor.GetComponentsInChildren<Renderer>(true);
+        Renderer[] renderers = doorRoot.GetComponentsInChildren<Renderer>(true);
         if (renderers.Length == 0)
         {
             return;
@@ -194,53 +204,10 @@ public class PlayerDoorInteractor : MonoBehaviour
             bounds.Encapsulate(renderers[i].bounds);
         }
 
-        BoxCollider collider = movingDoor.gameObject.AddComponent<BoxCollider>();
-        collider.center = movingDoor.InverseTransformPoint(bounds.center);
-        Vector3 localSize = movingDoor.InverseTransformVector(bounds.size);
+        BoxCollider collider = doorRoot.gameObject.AddComponent<BoxCollider>();
+        collider.center = doorRoot.InverseTransformPoint(bounds.center);
+        Vector3 localSize = doorRoot.InverseTransformVector(bounds.size);
         collider.size = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
-    }
-
-    private static bool HasNewDoorRoot(Transform candidate)
-    {
-        Transform current = candidate.parent;
-        while (current != null)
-        {
-            if (IsNewDoorRootName(current.name))
-            {
-                return true;
-            }
-
-            if (IsOldDoorRootName(current.name))
-            {
-                return false;
-            }
-
-            current = current.parent;
-        }
-
-        return false;
-    }
-
-    private static bool IsDoorAssemblyName(string objectName)
-    {
-        string normalized = NormalizeName(objectName);
-        return normalized == "door_old_metal" || normalized.StartsWith("door_old_metal.");
-    }
-
-    private static bool IsNewDoorRootName(string objectName)
-    {
-        string normalized = NormalizeName(objectName);
-        return normalized == "doornew" || normalized.StartsWith("doornew_(") || (normalized.StartsWith("door_(") && normalized.EndsWith(")"));
-    }
-
-    private static bool IsOldDoorRootName(string objectName)
-    {
-        return NormalizeName(objectName) == "door";
-    }
-
-    private static string NormalizeName(string objectName)
-    {
-        return objectName.ToLowerInvariant().Replace(' ', '_');
     }
 
     private float GetSwingDirection(Transform door)
@@ -248,6 +215,11 @@ public class PlayerDoorInteractor : MonoBehaviour
         Vector3 toPlayer = transform.position - door.position;
         float side = Vector3.Dot(Vector3.Cross(Vector3.up, door.forward), toPlayer);
         return side >= 0f ? -1f : 1f;
+    }
+
+    private static string NormalizeName(string objectName)
+    {
+        return objectName.ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty);
     }
 
     private void ResolveInteractionOrigin()
@@ -276,29 +248,42 @@ public class PlayerDoorInteractor : MonoBehaviour
     }
 }
 
-public class RuntimeSwingDoor : MonoBehaviour
+public class RuntimePivotDoor : MonoBehaviour
 {
-    private Quaternion _closedRotation;
-    private Quaternion _openRotation;
+    private Vector3 _pivotPoint;
+    private Vector3 _hingeAxis = Vector3.up;
+    private float _closedAngle;
+    private float _openAngle;
+    private float _currentAngle;
+    private float _targetAngle;
     private float _openSpeed = 180f;
     private bool _isOpen;
 
-    public void Configure(float openAngle, float openSpeed, float swingDirection, Vector3 worldHingeAxis)
+    public void Configure(Transform pivot, float openAngle, float openSpeed, float swingDirection, Vector3 worldHingeAxis)
     {
-        _closedRotation = transform.rotation;
-        Vector3 axis = worldHingeAxis.sqrMagnitude <= 0.0001f ? Vector3.up : worldHingeAxis.normalized;
-        _openRotation = Quaternion.AngleAxis(openAngle * swingDirection, axis) * _closedRotation;
+        _pivotPoint = pivot != null ? pivot.position : transform.position;
+        _hingeAxis = worldHingeAxis.sqrMagnitude <= 0.0001f ? Vector3.up : worldHingeAxis.normalized;
+        _closedAngle = 0f;
+        _openAngle = openAngle * swingDirection;
+        _currentAngle = 0f;
+        _targetAngle = _closedAngle;
         _openSpeed = openSpeed;
     }
 
     public void Toggle()
     {
         _isOpen = !_isOpen;
+        _targetAngle = _isOpen ? _openAngle : _closedAngle;
     }
 
     private void Update()
     {
-        Quaternion targetRotation = _isOpen ? _openRotation : _closedRotation;
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, _openSpeed * Time.deltaTime);
+        float nextAngle = Mathf.MoveTowards(_currentAngle, _targetAngle, _openSpeed * Time.deltaTime);
+        float delta = nextAngle - _currentAngle;
+        if (Mathf.Abs(delta) > 0.001f)
+        {
+            transform.RotateAround(_pivotPoint, _hingeAxis, delta);
+            _currentAngle = nextAngle;
+        }
     }
 }
