@@ -22,7 +22,7 @@ public class MetroHUD : MonoBehaviour
     [SerializeField] private Vector2 inventoryPosition = new Vector2(-126f, 34f);
     [SerializeField] private Vector2 titleSize = new Vector2(135f, 52f);
     [SerializeField] private Vector2 slotSize = new Vector2(62f, 58f);
-    [SerializeField] private Vector2 itemIconSize = new Vector2(46f, 46f);
+    [SerializeField] private Vector2 itemIconSize = new Vector2(52f, 52f);
     [SerializeField] private float slotSpacing = 74f;
     [SerializeField] private int visibleSlots = 3;
 

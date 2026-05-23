@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7b8e799e1047fdd4db58ca023eb0f879
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - interactionOrigin: {instanceID: 0}
+  - bucketSprite: {fileID: 21300000, guid: 0536d8c683bfdb94c99ec813b817a826, type: 3}
+  - key1Sprite: {fileID: 21300000, guid: 7181cfb50266130478b749fe91823c0f, type: 3}
+  - key2Sprite: {fileID: 21300000, guid: 10556a6564b5fcc4cb2ac0b1fdc79445, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

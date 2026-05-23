@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4135013735270702856}
   m_Layer: 0
-  m_Name:PlayerCameraRoot
+  m_Name: 
   m_TagString: CinemachineTarget
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -44,7 +44,7 @@ GameObject:
   - component: {fileID: 5393215578589016655}
   - component: {fileID: 5393215578589016640}
   m_Layer: 8
-  m_Name:Capsule
+  m_Name: 
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -90,6 +90,11 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -111,9 +116,11 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!136 &5393215578589016640
 CapsuleCollider:
@@ -155,7 +162,7 @@ GameObject:
   - component: {fileID: 8616685848737228390}
   - component: {fileID: 8616685848737228391}
   - component: {fileID: 8616685848737228392}
-  - component: {fileID: 8616685848737228393}
+  - component: {fileID: 2725553073256662823}
   m_Layer: 8
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -195,7 +202,6 @@ CharacterController:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -216,8 +222,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55919ac34a26952479f3fc91f777b2fa, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   MoveSpeed: 4
   SprintSpeed: 6
   RotationSpeed: 1
@@ -226,6 +232,11 @@ MonoBehaviour:
   Gravity: -15
   JumpTimeout: 0.1
   FallTimeout: 0.15
+  CrouchSpeed: 1.7
+  CrouchHeight: 1.2
+  CrouchCameraHeight: 0.85
+  CrouchTransitionSpeed: 10
+  CrouchVisibilityMultiplier: 0.45
   Grounded: 1
   GroundedOffset: -0.14
   GroundedRadius: 0.5
@@ -235,89 +246,7 @@ MonoBehaviour:
   CinemachineCameraTarget: {fileID: 4135013735270702863}
   TopClamp: 89
   BottomClamp: -89
---- !u!114 &8616685848737228390
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8616685848737228372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d0ed199b38bed64997aebc54683ef74, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  maxOxygen: 100
-  startOxygen: 100
-  toxicGasDrainRate: 5
-  waterDrainRate: 9
-  recoveryRate: 8
-  oxygenSlider: {fileID: 0}
-  onOxygenEmpty:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &8616685848737228391
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8616685848737228372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4d9d3f43b93c44cfa7762a2b4d5957db, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  standingVisibility: 1
-  crouchingVisibility: 0.35
-  movingVisibilityBonus: 0.25
-  walkNoiseRadius: 5
-  sprintNoiseRadius: 10
-  crouchNoiseRadius: 2
-  minAudibleSpeed: 0.15
---- !u!114 &8616685848737228392
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8616685848737228372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f58f4e82f2249e39e610cf23897b81c, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  openDoorKey: 113
-  interactionOrigin: {fileID: 4135013735270702856}
-  interactionDistance: 3
-  doorSearchRadius: 2.2
-  interactionMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  openAngle: 90
-  openSpeed: 180
-  hingeAxis: {x: 0, y: 1, z: 0}
---- !u!114 &8616685848737228393
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8616685848737228372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4c6c7b1d0da42a4abec39ee23ed18ae, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  interactKey: 101
-  interactionOrigin: {fileID: 4135013735270702856}
-  interactionDistance: 3
-  pickupSearchRadius: 1.6
-  maxLookAngle: 65
-  interactionMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  bucketIcon: {fileID: 21300000, guid: 0536d8c683bfdb94c99ec813b817a826, type: 3}
+  DriveMainCameraWithoutCinemachine: 1
 --- !u!114 &1978471637655604388
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -328,8 +257,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 909d917d73a63f940ac158d02e936645, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   pushLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -345,8 +274,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e087ecce43ebbff45a1b360637807d93, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   move: {x: 0, y: 0}
   look: {x: 0, y: 0}
   jump: 0
@@ -364,8 +293,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Actions: {fileID: -944628639613478452, guid: 4419d82f33d36e848b3ed5af4c8da37e, type: 3}
   m_NotificationBehavior: 0
   m_UIInputModule: {fileID: 0}
@@ -382,7 +311,7 @@ MonoBehaviour:
   - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName:
+        m_TargetAssemblyTypeName: 
         m_MethodName: InputMove
         m_Mode: 0
         m_Arguments:
@@ -390,15 +319,15 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: 6bc1aaf4-b110-4ff7-891e-5b9fe6f32c4d
-    m_ActionName: Player/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow,/XInputControllerWindows/leftStick]
+    m_ActionName: 'Player/Move[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d,/Keyboard/upArrow,/Keyboard/downArrow,/Keyboard/leftArrow,/Keyboard/rightArrow,/XInputControllerWindows/leftStick]'
   - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName:
+        m_TargetAssemblyTypeName: 
         m_MethodName: InputLook
         m_Mode: 0
         m_Arguments:
@@ -406,15 +335,15 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: 2690c379-f54d-45be-a724-414123833eb4
-    m_ActionName: Player/Look[/Mouse/delta,/XInputControllerWindows/rightStick]
+    m_ActionName: 'Player/Look[/Mouse/delta,/XInputControllerWindows/rightStick]'
   - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName:
+        m_TargetAssemblyTypeName: 
         m_MethodName: InputJump
         m_Mode: 0
         m_Arguments:
@@ -422,15 +351,15 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: 8c4abdf8-4099-493a-aa1a-129acec7c3df
-    m_ActionName: Player/Jump[/Keyboard/space,/XInputControllerWindows/buttonSouth]
+    m_ActionName: 'Player/Jump[/Keyboard/space,/XInputControllerWindows/buttonSouth]'
   - m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName:
+        m_TargetAssemblyTypeName: 
         m_MethodName: InputSprint
         m_Mode: 0
         m_Arguments:
@@ -438,17 +367,106 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument:
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
     m_ActionId: 980e881e-182c-404c-8cbf-3d09fdb48fef
-    m_ActionName: Player/Sprint[/Keyboard/leftShift,/XInputControllerWindows/leftTrigger]
+    m_ActionName: 'Player/Sprint[/Keyboard/leftShift,/XInputControllerWindows/leftTrigger]'
   - m_PersistentCalls:
       m_Calls: []
     m_ActionId: e4ce1614-c754-48c1-9103-33130441661f
     m_ActionName: UI/New action
   m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme:
+  m_DefaultControlScheme: 
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &8616685848737228390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d0ed199b38bed64997aebc54683ef74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxOxygen: 100
+  startOxygen: 100
+  toxicGasDrainRate: 5
+  waterDrainRate: 9
+  recoveryRate: 8
+  breathingPoint: {fileID: 0}
+  useMainCameraAsBreathingPoint: 1
+  oxygenSlider: {fileID: 0}
+  onOxygenEmpty:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &8616685848737228391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d9d3f43b93c44cfa7762a2b4d5957db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  standingVisibility: 1
+  crouchingVisibility: 0.35
+  underwaterVisibility: 0.08
+  movingVisibilityBonus: 0.25
+  walkNoiseRadius: 5
+  sprintNoiseRadius: 10
+  crouchNoiseRadius: 2
+  underwaterNoiseMultiplier: 0.35
+  minAudibleSpeed: 0.15
+  visibilityCheckPoint: {fileID: 0}
+  useMainCameraAsVisibilityPoint: 1
+--- !u!114 &8616685848737228392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f58f4e82f2249e39e610cf23897b81c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  openDoorKey: 113
+  interactionOrigin: {fileID: 4135013735270702856}
+  interactionDistance: 3
+  doorSearchRadius: 2.2
+  interactionMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  openAngle: 90
+  openSpeed: 180
+  hingeAxis: {x: 0, y: 1, z: 0}
+--- !u!114 &2725553073256662823
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b8e799e1047fdd4db58ca023eb0f879, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentItems
+  pickupKey: 101
+  interactionOrigin: {fileID: 0}
+  interactionDistance: 3
+  pickupSearchRadius: 1.8
+  maxLookAngle: 70
+  logDebugMessages: 1
+  bucketSprite: {fileID: 21300000, guid: 0536d8c683bfdb94c99ec813b817a826, type: 3}
+  key1Sprite: {fileID: 21300000, guid: 7181cfb50266130478b749fe91823c0f, type: 3}
+  key2Sprite: {fileID: 21300000, guid: 10556a6564b5fcc4cb2ac0b1fdc79445, type: 3}

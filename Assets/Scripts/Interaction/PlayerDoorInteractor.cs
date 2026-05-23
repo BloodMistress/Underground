@@ -214,7 +214,14 @@ public class PlayerDoorInteractor : MonoBehaviour
     {
         Vector3 toPlayer = transform.position - door.position;
         float side = Vector3.Dot(Vector3.Cross(Vector3.up, door.forward), toPlayer);
-        return side >= 0f ? -1f : 1f;
+        float direction = side >= 0f ? -1f : 1f;
+        string normalizedName = NormalizeName(door.name);
+        if (normalizedName == "door" || normalizedName == "door3")
+        {
+            direction *= -1f;
+        }
+
+        return direction;
     }
 
     private static string NormalizeName(string objectName)

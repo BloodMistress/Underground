@@ -1,10 +1,8 @@
-using StarterAssets;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
 
 [DisallowMultipleComponent]
-[RequireComponent(typeof(NavMeshAgent))]
 public class MonsterAI : MonoBehaviour
 {
     private enum MonsterState
@@ -64,6 +62,9 @@ public class MonsterAI : MonoBehaviour
     private float _suspicion;
     private Vector3 _lastKnownPlayerPosition;
     private bool _hasCaughtPlayer;
+    private bool _warnedAboutNavigation;
+
+    private bool CanNavigate => _agent != null && _agent.enabled && _agent.isOnNavMesh;
 
     private void Awake()
     {
@@ -76,19 +77,7 @@ public class MonsterAI : MonoBehaviour
 
     private void Start()
     {
-        if (player == null)
-        {
-            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-            if (playerObject != null)
-            {
-                player = playerObject.transform;
-            }
-        }
-
-        if (playerStealth == null && player != null)
-        {
-            playerStealth = player.GetComponent<PlayerStealthProfile>();
-        }
+        ResolvePlayer();
 
         if (eyes == null)
         {
@@ -102,6 +91,7 @@ public class MonsterAI : MonoBehaviour
     {
         if (player == null)
         {
+            ResolvePlayer();
             UpdateAnimation();
             return;
         }
@@ -125,6 +115,23 @@ public class MonsterAI : MonoBehaviour
         }
 
         UpdateAnimation();
+    }
+
+    private void ResolvePlayer()
+    {
+        if (player == null)
+        {
+            GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+            if (playerObject != null)
+            {
+                player = playerObject.transform;
+            }
+        }
+
+        if (playerStealth == null && player != null)
+        {
+            playerStealth = player.GetComponent<PlayerStealthProfile>();
+        }
     }
 
     private void UpdateDetection(float deltaTime)
@@ -213,6 +220,11 @@ public class MonsterAI : MonoBehaviour
 
     private void UpdatePatrol()
     {
+        if (!EnsureNavigationReady())
+        {
+            return;
+        }
+
         if (patrolPoints == null || patrolPoints.Length == 0)
         {
             EnterLookAround();
@@ -221,7 +233,7 @@ public class MonsterAI : MonoBehaviour
 
         _agent.speed = patrolSpeed;
         Transform target = patrolPoints[_patrolIndex];
-        if (target != null && _agent.destination != target.position)
+        if (target != null && Vector3.Distance(_agent.destination, target.position) > 0.2f)
         {
             _agent.SetDestination(target.position);
         }
@@ -238,7 +250,7 @@ public class MonsterAI : MonoBehaviour
 
     private void UpdateLookAround(float deltaTime)
     {
-        _agent.ResetPath();
+        StopMoving();
         _lookTimer -= deltaTime;
         transform.Rotate(Vector3.up, 35f * deltaTime);
 
@@ -250,8 +262,14 @@ public class MonsterAI : MonoBehaviour
 
     private void UpdateInvestigate(float deltaTime)
     {
-        _agent.speed = patrolSpeed;
+        if (!EnsureNavigationReady())
+        {
+            return;
+        }
+
         _searchTimer -= deltaTime;
+        _agent.speed = patrolSpeed;
+        _agent.SetDestination(_lastKnownPlayerPosition);
 
         if (!_agent.pathPending && _agent.remainingDistance <= patrolPointTolerance)
         {
@@ -266,6 +284,11 @@ public class MonsterAI : MonoBehaviour
 
     private void UpdateChase(float deltaTime)
     {
+        if (!EnsureNavigationReady())
+        {
+            return;
+        }
+
         _agent.speed = chaseSpeed;
         _agent.SetDestination(player.position);
 
@@ -281,12 +304,36 @@ public class MonsterAI : MonoBehaviour
         }
     }
 
+    private bool EnsureNavigationReady()
+    {
+        if (CanNavigate)
+        {
+            return true;
+        }
+
+        if (!_warnedAboutNavigation)
+        {
+            Debug.LogWarning("MonsterAI needs a NavMeshAgent placed on a baked NavMesh. Add/configure NavMeshAgent on the monster and bake NavMesh for Metro.", this);
+            _warnedAboutNavigation = true;
+        }
+
+        return false;
+    }
+
+    private void StopMoving()
+    {
+        if (CanNavigate)
+        {
+            _agent.ResetPath();
+        }
+    }
+
     private void EnterPatrol()
     {
         _state = MonsterState.Patrol;
-        _agent.speed = patrolSpeed;
-        if (patrolPoints != null && patrolPoints.Length > 0 && patrolPoints[_patrolIndex] != null)
+        if (CanNavigate && patrolPoints != null && patrolPoints.Length > 0 && patrolPoints[_patrolIndex] != null)
         {
+            _agent.speed = patrolSpeed;
             _agent.SetDestination(patrolPoints[_patrolIndex].position);
         }
     }
@@ -295,22 +342,29 @@ public class MonsterAI : MonoBehaviour
     {
         _state = MonsterState.LookAround;
         _lookTimer = lookAroundTime;
-        _agent.ResetPath();
+        StopMoving();
     }
 
     private void EnterInvestigate(Vector3 position)
     {
         _state = MonsterState.Investigate;
         _searchTimer = searchTime;
-        _agent.speed = patrolSpeed;
-        _agent.SetDestination(position);
+        if (CanNavigate)
+        {
+            _agent.speed = patrolSpeed;
+            _agent.SetDestination(position);
+        }
     }
 
     private void EnterChase()
     {
         _state = MonsterState.Chase;
-        _agent.speed = chaseSpeed;
         _lostSightTimer = lostSightChaseTime;
+        if (CanNavigate)
+        {
+            _agent.speed = chaseSpeed;
+            _agent.SetDestination(player.position);
+        }
     }
 
     private void CatchPlayer()
@@ -321,6 +375,7 @@ public class MonsterAI : MonoBehaviour
         }
 
         _hasCaughtPlayer = true;
+        StopMoving();
         Debug.Log("Monster caught the player.");
         onPlayerCaught?.Invoke();
         GameOverScreen.ShowGameOver();
@@ -333,7 +388,7 @@ public class MonsterAI : MonoBehaviour
             return;
         }
 
-        float speed = _agent != null ? _agent.velocity.magnitude : 0f;
+        float speed = CanNavigate ? _agent.velocity.magnitude : 0f;
         TrySetFloat(speedParameter, speed);
         TrySetBool(runningParameter, _state == MonsterState.Chase);
         TrySetBool(lookingParameter, _state == MonsterState.LookAround);
@@ -354,7 +409,7 @@ public class MonsterAI : MonoBehaviour
 
     private void TrySetFloat(string parameterName, float value)
     {
-        if (string.IsNullOrWhiteSpace(parameterName)) return;
+        if (string.IsNullOrWhiteSpace(parameterName) || animator == null) return;
         foreach (AnimatorControllerParameter parameter in animator.parameters)
         {
             if (parameter.name == parameterName && parameter.type == AnimatorControllerParameterType.Float)
@@ -367,7 +422,7 @@ public class MonsterAI : MonoBehaviour
 
     private void TrySetBool(string parameterName, bool value)
     {
-        if (string.IsNullOrWhiteSpace(parameterName)) return;
+        if (string.IsNullOrWhiteSpace(parameterName) || animator == null) return;
         foreach (AnimatorControllerParameter parameter in animator.parameters)
         {
             if (parameter.name == parameterName && parameter.type == AnimatorControllerParameterType.Bool)
@@ -380,10 +435,10 @@ public class MonsterAI : MonoBehaviour
 
     private void CrossFadeIfExists(string stateName)
     {
-        if (string.IsNullOrWhiteSpace(stateName)) return;
+        if (string.IsNullOrWhiteSpace(stateName) || animator == null || animator.runtimeAnimatorController == null) return;
 
         int stateHash = Animator.StringToHash(stateName);
-        if (animator.HasState(0, stateHash) && !animator.GetCurrentAnimatorStateInfo(0).shortNameHash.Equals(stateHash))
+        if (animator.HasState(0, stateHash) && animator.GetCurrentAnimatorStateInfo(0).shortNameHash != stateHash)
         {
             animator.CrossFade(stateHash, 0.15f);
         }

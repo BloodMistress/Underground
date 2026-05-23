@@ -120,10 +120,10 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _Parallax: 0.0192
+    - _Parallax: 0.0422
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _Smoothness: 0.468
+    - _Smoothness: 0.55
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
