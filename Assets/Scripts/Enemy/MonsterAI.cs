@@ -32,6 +32,7 @@ public class MonsterAI : MonoBehaviour
     [SerializeField] private float patrolSpeed = 1.8f;
     [SerializeField] private float patrolPointTolerance = 0.6f;
     [SerializeField] private float lookAroundTime = 3f;
+    [SerializeField] private int lookAroundAnimationRepeats = 3;
     [SerializeField] private float lookAroundEveryPoint = 1f;
 
     [Header("Detection")]
@@ -67,6 +68,8 @@ public class MonsterAI : MonoBehaviour
     private int _patrolIndex;
     private int _patrolDirection = 1;
     private float _lookTimer;
+    private float _lookAnimationTimer;
+    private int _lookAnimationRepeatsRemaining;
     private float _searchTimer;
     private float _lostSightTimer;
     private float _suspicion;
@@ -354,7 +357,7 @@ public class MonsterAI : MonoBehaviour
     {
         StopMoving();
         _lookTimer -= deltaTime;
-        transform.Rotate(Vector3.up, 35f * deltaTime);
+        PlayLookAroundCycle(deltaTime);
 
         if (_lookTimer <= 0f)
         {
@@ -492,8 +495,12 @@ public class MonsterAI : MonoBehaviour
     private void EnterLookAround()
     {
         _state = MonsterState.LookAround;
-        _lookTimer = lookAroundTime;
+        _lookAnimationRepeatsRemaining = Mathf.Max(1, lookAroundAnimationRepeats);
+        float lookClipLength = GetAnimationClipLength(lookStateName);
+        _lookTimer = lookClipLength > 0f ? lookClipLength * _lookAnimationRepeatsRemaining : lookAroundTime;
+        _lookAnimationTimer = 0f;
         StopMoving();
+        PlayLookAroundCycle(0f);
     }
 
     private void EnterInvestigate(Vector3 position)
@@ -618,6 +625,51 @@ public class MonsterAI : MonoBehaviour
 
         _lastRequestedAnimationStateHash = stateHash;
         animator.CrossFade(stateHash, 0.15f);
+    }
+
+    private void PlayLookAroundCycle(float deltaTime)
+    {
+        if (animator == null || string.IsNullOrWhiteSpace(lookStateName))
+        {
+            return;
+        }
+
+        _lookAnimationTimer -= deltaTime;
+        if (_lookAnimationTimer > 0f || _lookAnimationRepeatsRemaining <= 0)
+        {
+            return;
+        }
+
+        int stateHash = Animator.StringToHash(lookStateName);
+        if (!animator.HasState(0, stateHash))
+        {
+            return;
+        }
+
+        animator.Play(stateHash, 0, 0f);
+        _lastRequestedAnimationStateHash = stateHash;
+        _lookAnimationRepeatsRemaining--;
+
+        float clipLength = GetAnimationClipLength(lookStateName);
+        _lookAnimationTimer = clipLength > 0f ? clipLength : Mathf.Max(0.1f, lookAroundTime / Mathf.Max(1, lookAroundAnimationRepeats));
+    }
+
+    private float GetAnimationClipLength(string stateName)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null || string.IsNullOrWhiteSpace(stateName))
+        {
+            return 0f;
+        }
+
+        foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+        {
+            if (clip != null && clip.name == stateName)
+            {
+                return clip.length;
+            }
+        }
+
+        return 0f;
     }
 
     private void OnTriggerEnter(Collider other)

@@ -81,7 +81,11 @@ public class PlayerDoorInteractor : MonoBehaviour
             EnsureDoorCollider(doorRoot);
         }
 
-        door.Toggle();
+        bool isOpen = door.Toggle();
+        if (isOpen && NormalizeName(doorRoot.name) == "door3")
+        {
+            VictoryScreen.ShowVictory();
+        }
     }
 
     private void RefreshRuntimeDoors()
@@ -277,10 +281,11 @@ public class RuntimePivotDoor : MonoBehaviour
         _openSpeed = openSpeed;
     }
 
-    public void Toggle()
+    public bool Toggle()
     {
         _isOpen = !_isOpen;
         _targetAngle = _isOpen ? _openAngle : _closedAngle;
+        return _isOpen;
     }
 
     private void Update()

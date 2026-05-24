@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 [DisallowMultipleComponent]
 [RequireComponent(typeof(Canvas))]
@@ -25,8 +28,24 @@ public class MetroHUD : MonoBehaviour
     [SerializeField] private Vector2 itemIconSize = new Vector2(52f, 52f);
     [SerializeField] private float slotSpacing = 74f;
     [SerializeField] private int visibleSlots = 3;
+    [SerializeField] private Color selectedSlotColor = new Color(0.45f, 0.95f, 1f, 1f);
+    [SerializeField] private Color emptySelectedSlotColor = new Color(0.45f, 0.95f, 1f, 0.55f);
+    [SerializeField] private Vector3 selectedSlotScale = new Vector3(1.08f, 1.08f, 1f);
 
+    private readonly List<Image> _slotImages = new List<Image>();
     private readonly List<Image> _itemImages = new List<Image>();
+    private int _selectedSlotIndex = -1;
+
+    public static int SelectedSlotIndex => _instance != null ? _instance._selectedSlotIndex : -1;
+    public static Sprite SelectedItemSprite => _instance != null ? _instance.GetSelectedItemSprite() : null;
+    public static string SelectedItemName
+    {
+        get
+        {
+            Sprite selectedSprite = SelectedItemSprite;
+            return selectedSprite != null ? selectedSprite.name : string.Empty;
+        }
+    }
 
     private void Awake()
     {
@@ -34,6 +53,11 @@ public class MetroHUD : MonoBehaviour
         ConfigureCanvas();
         BuildOxygenHUD();
         BuildInventoryHUD();
+    }
+
+    private void Update()
+    {
+        HandleInventorySelectionInput();
     }
 
     public static bool TryAddInventoryItem(Sprite itemSprite)
@@ -62,6 +86,15 @@ public class MetroHUD : MonoBehaviour
 
             itemImage.sprite = itemSprite;
             itemImage.enabled = true;
+            if (_selectedSlotIndex < 0)
+            {
+                SelectInventorySlot(_itemImages.IndexOf(itemImage));
+            }
+            else
+            {
+                RefreshInventorySelectionVisuals();
+            }
+
             return true;
         }
 
@@ -151,6 +184,7 @@ public class MetroHUD : MonoBehaviour
 
     private void BuildInventoryHUD()
     {
+        _slotImages.Clear();
         _itemImages.Clear();
         RectTransform panel = CreateRect("InventoryHUD", transform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(1f, 0f), inventoryPosition, new Vector2(260f, 120f));
 
@@ -170,6 +204,7 @@ public class MetroHUD : MonoBehaviour
             slotImage.color = Color.white;
             slotImage.raycastTarget = false;
             slotImage.preserveAspect = true;
+            _slotImages.Add(slotImage);
 
             RectTransform item = CreateRect("ItemIcon", slot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, itemIconSize);
             Image itemImage = GetOrAdd<Image>(item.gameObject);
@@ -181,6 +216,88 @@ public class MetroHUD : MonoBehaviour
             item.SetAsLastSibling();
             _itemImages.Add(itemImage);
         }
+
+        if (_selectedSlotIndex >= visibleSlots)
+        {
+            _selectedSlotIndex = -1;
+        }
+
+        RefreshInventorySelectionVisuals();
+    }
+
+    private void HandleInventorySelectionInput()
+    {
+        for (int i = 0; i < visibleSlots; i++)
+        {
+            if (WasInventorySlotPressed(i))
+            {
+                SelectInventorySlot(i);
+                return;
+            }
+        }
+    }
+
+    private bool WasInventorySlotPressed(int index)
+    {
+#if ENABLE_INPUT_SYSTEM
+        Keyboard keyboard = Keyboard.current;
+        if (keyboard == null)
+        {
+            return false;
+        }
+
+        switch (index)
+        {
+            case 0:
+                return keyboard.digit1Key.wasPressedThisFrame || keyboard.numpad1Key.wasPressedThisFrame;
+            case 1:
+                return keyboard.digit2Key.wasPressedThisFrame || keyboard.numpad2Key.wasPressedThisFrame;
+            case 2:
+                return keyboard.digit3Key.wasPressedThisFrame || keyboard.numpad3Key.wasPressedThisFrame;
+            default:
+                return false;
+        }
+#else
+        return Input.GetKeyDown((KeyCode)((int)KeyCode.Alpha1 + index)) || Input.GetKeyDown((KeyCode)((int)KeyCode.Keypad1 + index));
+#endif
+    }
+
+    private void SelectInventorySlot(int index)
+    {
+        if (index < 0 || index >= _itemImages.Count)
+        {
+            return;
+        }
+
+        _selectedSlotIndex = index;
+        RefreshInventorySelectionVisuals();
+    }
+
+    private void RefreshInventorySelectionVisuals()
+    {
+        for (int i = 0; i < _slotImages.Count; i++)
+        {
+            Image slotImage = _slotImages[i];
+            if (slotImage == null)
+            {
+                continue;
+            }
+
+            bool isSelected = i == _selectedSlotIndex;
+            bool hasItem = i < _itemImages.Count && _itemImages[i] != null && _itemImages[i].sprite != null;
+            slotImage.color = isSelected ? (hasItem ? selectedSlotColor : emptySelectedSlotColor) : Color.white;
+            slotImage.transform.localScale = isSelected ? selectedSlotScale : Vector3.one;
+        }
+    }
+
+    private Sprite GetSelectedItemSprite()
+    {
+        if (_selectedSlotIndex < 0 || _selectedSlotIndex >= _itemImages.Count)
+        {
+            return null;
+        }
+
+        return _itemImages[_selectedSlotIndex] != null ? _itemImages[_selectedSlotIndex].sprite : null;
     }
 
     private RectTransform CreateRect(string objectName, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)
