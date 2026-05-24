@@ -41,6 +41,7 @@ public class OxygenSystem : MonoBehaviour
     private int _toxicGasZoneCount;
     private bool _isDead;
     private bool _wasInWater;
+    private bool _underwaterAudioConfigured;
     private Canvas _underwaterOverlayCanvas;
 
     public float CurrentOxygen => _oxygen;
@@ -144,12 +145,12 @@ public class OxygenSystem : MonoBehaviour
 
     private bool IsBreathingPointInWater()
     {
-        if (breathingPoint != null && WaterZone.ContainsPoint(breathingPoint.position))
+        if (breathingPoint == null)
         {
-            return true;
+            return false;
         }
 
-        return _waterZoneCount > 0;
+        return WaterZone.ContainsPoint(breathingPoint.position);
     }
 
     private void ResolveBreathingPoint()
@@ -200,11 +201,20 @@ public class OxygenSystem : MonoBehaviour
             underwaterAmbientSource = gameObject.AddComponent<AudioSource>();
         }
 
+        if (_underwaterAudioConfigured && underwaterAmbientSource.clip == underwaterAmbientClip)
+        {
+            return;
+        }
+
         underwaterAmbientSource.clip = underwaterAmbientClip;
         underwaterAmbientSource.loop = true;
         underwaterAmbientSource.playOnAwake = false;
         underwaterAmbientSource.spatialBlend = 0f;
         underwaterAmbientSource.volume = 0f;
+        underwaterAmbientSource.mute = false;
+        underwaterAmbientSource.ignoreListenerPause = true;
+        underwaterAmbientSource.priority = 32;
+        _underwaterAudioConfigured = true;
     }
 
     private void UpdateUnderwaterAudio(float deltaTime)

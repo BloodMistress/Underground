@@ -20,6 +20,10 @@ public class PlayerDoorInteractor : MonoBehaviour
     [SerializeField] private float openSpeed = 180f;
     [SerializeField] private Vector3 hingeAxis = Vector3.up;
 
+    [Header("Locked Doors")]
+    [SerializeField] private string door3RequiredItemName = "key1";
+    [SerializeField] private bool logLockedDoorMessages = true;
+
     private readonly List<Transform> _runtimeDoors = new List<Transform>();
     private Camera _mainCamera;
 
@@ -72,6 +76,13 @@ public class PlayerDoorInteractor : MonoBehaviour
             return;
         }
 
+        string normalizedDoorName = NormalizeName(doorRoot.name);
+        if (normalizedDoorName == "door3" && !IsRequiredInventoryItemSelected(door3RequiredItemName))
+        {
+            LogLockedDoorMessage("door3 needs selected inventory item: " + door3RequiredItemName + ".");
+            return;
+        }
+
         Transform pivot = FindDoorPivot(doorRoot);
         RuntimePivotDoor door = doorRoot.GetComponent<RuntimePivotDoor>();
         if (door == null)
@@ -82,7 +93,7 @@ public class PlayerDoorInteractor : MonoBehaviour
         }
 
         bool isOpen = door.Toggle();
-        if (isOpen && NormalizeName(doorRoot.name) == "door3")
+        if (isOpen && normalizedDoorName == "door3")
         {
             VictoryScreen.ShowVictory();
         }
@@ -231,6 +242,24 @@ public class PlayerDoorInteractor : MonoBehaviour
     private static string NormalizeName(string objectName)
     {
         return objectName.ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty);
+    }
+
+    private static bool IsRequiredInventoryItemSelected(string requiredItemName)
+    {
+        if (string.IsNullOrWhiteSpace(requiredItemName))
+        {
+            return true;
+        }
+
+        return NormalizeName(MetroHUD.SelectedItemName) == NormalizeName(requiredItemName);
+    }
+
+    private void LogLockedDoorMessage(string message)
+    {
+        if (logLockedDoorMessages)
+        {
+            Debug.Log("[PlayerDoorInteractor] " + message, this);
+        }
     }
 
     private void ResolveInteractionOrigin()
