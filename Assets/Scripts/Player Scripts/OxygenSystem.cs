@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class OxygenSystem : MonoBehaviour
 {
@@ -18,6 +21,12 @@ public class OxygenSystem : MonoBehaviour
     [Header("UI")]
     [SerializeField] private Slider oxygenSlider;
 
+    [Header("Underwater Audio")]
+    [SerializeField] private AudioClip underwaterAmbientClip;
+    [SerializeField] private AudioSource underwaterAmbientSource;
+    [SerializeField] private float underwaterAmbientVolume = 0.65f;
+    [SerializeField] private float underwaterFadeSpeed = 4f;
+
     [Header("Events")]
     public UnityEvent onOxygenEmpty;
 
@@ -25,6 +34,7 @@ public class OxygenSystem : MonoBehaviour
     private int _waterZoneCount;
     private int _toxicGasZoneCount;
     private bool _isDead;
+    private bool _wasInWater;
 
     public float CurrentOxygen => _oxygen;
     public float MaxOxygen => maxOxygen;
@@ -43,6 +53,7 @@ public class OxygenSystem : MonoBehaviour
             oxygenSlider = FindFirstObjectByType<Slider>();
         }
 
+        EnsureUnderwaterAudioSource();
         RefreshUI();
     }
 
@@ -55,6 +66,7 @@ public class OxygenSystem : MonoBehaviour
 
         ResolveBreathingPoint();
         UpdateOxygen(Time.deltaTime);
+        UpdateUnderwaterAudio(Time.deltaTime);
         RefreshUI();
 
         if (_oxygen <= 0f)
@@ -164,6 +176,72 @@ public class OxygenSystem : MonoBehaviour
         oxygenSlider.maxValue = maxOxygen;
         oxygenSlider.value = _oxygen;
     }
+
+    private void EnsureUnderwaterAudioSource()
+    {
+        if (underwaterAmbientClip == null)
+        {
+            return;
+        }
+
+        if (underwaterAmbientSource == null)
+        {
+            underwaterAmbientSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        underwaterAmbientSource.clip = underwaterAmbientClip;
+        underwaterAmbientSource.loop = true;
+        underwaterAmbientSource.playOnAwake = false;
+        underwaterAmbientSource.spatialBlend = 0f;
+        underwaterAmbientSource.volume = 0f;
+    }
+
+    private void UpdateUnderwaterAudio(float deltaTime)
+    {
+        EnsureUnderwaterAudioSource();
+        if (underwaterAmbientSource == null || underwaterAmbientClip == null)
+        {
+            return;
+        }
+
+        bool isInWater = IsInWater;
+        if (isInWater && !underwaterAmbientSource.isPlaying)
+        {
+            underwaterAmbientSource.Play();
+        }
+
+        float targetVolume = isInWater ? underwaterAmbientVolume : 0f;
+        underwaterAmbientSource.volume = Mathf.MoveTowards(underwaterAmbientSource.volume, targetVolume, underwaterFadeSpeed * deltaTime);
+
+        if (!isInWater && _wasInWater && underwaterAmbientSource.volume <= 0.001f)
+        {
+            underwaterAmbientSource.Stop();
+        }
+
+        _wasInWater = isInWater;
+    }
+
+#if UNITY_EDITOR
+    private void Reset()
+    {
+        AssignDefaultUnderwaterAudio();
+    }
+
+    private void OnValidate()
+    {
+        AssignDefaultUnderwaterAudio();
+    }
+
+    private void AssignDefaultUnderwaterAudio()
+    {
+        if (underwaterAmbientClip != null)
+        {
+            return;
+        }
+
+        underwaterAmbientClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/music and sounds/ambientsound_underwater.wav");
+    }
+#endif
 
     private void Die()
     {

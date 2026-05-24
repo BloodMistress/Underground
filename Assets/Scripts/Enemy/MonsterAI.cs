@@ -13,6 +13,13 @@ public class MonsterAI : MonoBehaviour
         Chase
     }
 
+    private enum PatrolMode
+    {
+        Loop,
+        PingPong,
+        Random
+    }
+
     [Header("Target")]
     [SerializeField] private Transform player;
     [SerializeField] private PlayerStealthProfile playerStealth;
@@ -21,6 +28,7 @@ public class MonsterAI : MonoBehaviour
 
     [Header("Patrol")]
     [SerializeField] private Transform[] patrolPoints;
+    [SerializeField] private PatrolMode patrolMode = PatrolMode.Loop;
     [SerializeField] private float patrolSpeed = 1.8f;
     [SerializeField] private float patrolPointTolerance = 0.6f;
     [SerializeField] private float lookAroundTime = 3f;
@@ -39,6 +47,7 @@ public class MonsterAI : MonoBehaviour
     [Header("Chase")]
     [SerializeField] private float chaseSpeed = 4.2f;
     [SerializeField] private float catchDistance = 1.35f;
+    [SerializeField] private float catchHeightTolerance = 2.5f;
     [SerializeField] private float lostSightChaseTime = 3f;
 
     [Header("Animation")]
@@ -56,6 +65,7 @@ public class MonsterAI : MonoBehaviour
     private NavMeshAgent _agent;
     private MonsterState _state;
     private int _patrolIndex;
+    private int _patrolDirection = 1;
     private float _lookTimer;
     private float _searchTimer;
     private float _lostSightTimer;
@@ -63,21 +73,20 @@ public class MonsterAI : MonoBehaviour
     private Vector3 _lastKnownPlayerPosition;
     private bool _hasCaughtPlayer;
     private bool _warnedAboutNavigation;
+    private int _lastRequestedAnimationStateHash;
 
     private bool CanNavigate => _agent != null && _agent.enabled && _agent.isOnNavMesh;
 
     private void Awake()
     {
         _agent = GetComponent<NavMeshAgent>();
-        if (animator == null)
-        {
-            animator = GetComponentInChildren<Animator>();
-        }
+        ResolveAnimator();
     }
 
     private void Start()
     {
         ResolvePlayer();
+        ResolveAnimator();
 
         if (eyes == null)
         {
@@ -89,9 +98,18 @@ public class MonsterAI : MonoBehaviour
 
     private void Update()
     {
+        ResolveAnimator();
+
         if (player == null)
         {
             ResolvePlayer();
+            UpdateAnimation();
+            return;
+        }
+
+        TryCatchPlayerByDistance();
+        if (_hasCaughtPlayer)
+        {
             UpdateAnimation();
             return;
         }
@@ -132,6 +150,47 @@ public class MonsterAI : MonoBehaviour
         {
             playerStealth = player.GetComponent<PlayerStealthProfile>();
         }
+    }
+
+    private void ResolveAnimator()
+    {
+        if (animator != null && IsUsableAnimator(animator))
+        {
+            return;
+        }
+
+        Animator[] animators = GetComponentsInChildren<Animator>(true);
+        Animator bestAnimator = null;
+
+        foreach (Animator candidate in animators)
+        {
+            if (!IsUsableAnimator(candidate))
+            {
+                continue;
+            }
+
+            if (candidate.transform != transform)
+            {
+                animator = candidate;
+                return;
+            }
+
+            bestAnimator = candidate;
+        }
+
+        if (bestAnimator != null)
+        {
+            animator = bestAnimator;
+        }
+    }
+
+    private static bool IsUsableAnimator(Animator candidate)
+    {
+        return candidate != null
+            && candidate.enabled
+            && candidate.runtimeAnimatorController != null
+            && candidate.avatar != null
+            && candidate.avatar.isValid;
     }
 
     private void UpdateDetection(float deltaTime)
@@ -240,11 +299,54 @@ public class MonsterAI : MonoBehaviour
 
         if (!_agent.pathPending && _agent.remainingDistance <= patrolPointTolerance)
         {
-            _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
+            AdvancePatrolIndex();
             if (Random.value <= lookAroundEveryPoint)
             {
                 EnterLookAround();
             }
+        }
+    }
+
+    private void AdvancePatrolIndex()
+    {
+        if (patrolPoints == null || patrolPoints.Length == 0)
+        {
+            _patrolIndex = 0;
+            return;
+        }
+
+        if (patrolPoints.Length == 1)
+        {
+            _patrolIndex = 0;
+            return;
+        }
+
+        switch (patrolMode)
+        {
+            case PatrolMode.PingPong:
+                _patrolIndex += _patrolDirection;
+                if (_patrolIndex >= patrolPoints.Length)
+                {
+                    _patrolDirection = -1;
+                    _patrolIndex = patrolPoints.Length - 2;
+                }
+                else if (_patrolIndex < 0)
+                {
+                    _patrolDirection = 1;
+                    _patrolIndex = 1;
+                }
+                break;
+            case PatrolMode.Random:
+                int nextIndex = Random.Range(0, patrolPoints.Length);
+                if (patrolPoints.Length > 1 && nextIndex == _patrolIndex)
+                {
+                    nextIndex = (nextIndex + 1) % patrolPoints.Length;
+                }
+                _patrolIndex = nextIndex;
+                break;
+            default:
+                _patrolIndex = (_patrolIndex + 1) % patrolPoints.Length;
+                break;
         }
     }
 
@@ -275,6 +377,12 @@ public class MonsterAI : MonoBehaviour
         {
             EnterLookAround();
         }
+        //if (!_agent.pathPending && _agent.remainingDistance <= patrolPointTolerance)
+        //{
+        //    _state = MonsterState.LookAround;
+        //    _lookTimer = searchTime;
+        //    StopMoving();
+        //}
 
         if (_searchTimer <= 0f && _suspicion < suspicionToInvestigate)
         {
@@ -292,7 +400,7 @@ public class MonsterAI : MonoBehaviour
         _agent.speed = chaseSpeed;
         _agent.SetDestination(player.position);
 
-        if (Vector3.Distance(transform.position, player.position) <= catchDistance)
+        if (IsPlayerWithinCatchDistance())
         {
             CatchPlayer();
             return;
@@ -318,6 +426,49 @@ public class MonsterAI : MonoBehaviour
         }
 
         return false;
+    }
+
+    private void TryCatchPlayerByDistance()
+    {
+        if (_hasCaughtPlayer || player == null)
+        {
+            return;
+        }
+
+        if (IsPlayerWithinCatchDistance())
+        {
+            CatchPlayer();
+        }
+    }
+
+    private bool IsPlayerWithinCatchDistance()
+    {
+        if (player == null)
+        {
+            return false;
+        }
+
+        Vector3 monsterPosition = transform.position;
+        Vector3 playerPosition = player.position;
+        float verticalDistance = Mathf.Abs(monsterPosition.y - playerPosition.y);
+        Vector2 monsterXZ = new Vector2(monsterPosition.x, monsterPosition.z);
+        Vector2 playerXZ = new Vector2(playerPosition.x, playerPosition.z);
+
+        if (verticalDistance <= catchHeightTolerance && Vector2.Distance(monsterXZ, playerXZ) <= catchDistance)
+        {
+            return true;
+        }
+
+        Collider monsterCollider = GetComponent<Collider>();
+        Collider playerCollider = player.GetComponentInChildren<Collider>();
+        if (monsterCollider == null || playerCollider == null)
+        {
+            return false;
+        }
+
+        Vector3 monsterClosest = monsterCollider.ClosestPoint(playerCollider.bounds.center);
+        Vector3 playerClosest = playerCollider.ClosestPoint(monsterClosest);
+        return Vector3.Distance(monsterClosest, playerClosest) <= catchDistance;
     }
 
     private void StopMoving()
@@ -438,9 +589,57 @@ public class MonsterAI : MonoBehaviour
         if (string.IsNullOrWhiteSpace(stateName) || animator == null || animator.runtimeAnimatorController == null) return;
 
         int stateHash = Animator.StringToHash(stateName);
-        if (animator.HasState(0, stateHash) && animator.GetCurrentAnimatorStateInfo(0).shortNameHash != stateHash)
+        if (!animator.HasState(0, stateHash))
         {
-            animator.CrossFade(stateHash, 0.15f);
+            return;
+        }
+
+        AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
+        if (currentState.shortNameHash == stateHash)
+        {
+            _lastRequestedAnimationStateHash = stateHash;
+            return;
+        }
+
+        if (animator.IsInTransition(0))
+        {
+            AnimatorStateInfo nextState = animator.GetNextAnimatorStateInfo(0);
+            if (nextState.shortNameHash == stateHash)
+            {
+                _lastRequestedAnimationStateHash = stateHash;
+                return;
+            }
+        }
+
+        if (_lastRequestedAnimationStateHash == stateHash && currentState.normalizedTime < 0.08f)
+        {
+            return;
+        }
+
+        _lastRequestedAnimationStateHash = stateHash;
+        animator.CrossFade(stateHash, 0.15f);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        TryCatchPlayerFromCollider(other);
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        TryCatchPlayerFromCollider(collision.collider);
+    }
+
+    private void TryCatchPlayerFromCollider(Collider other)
+    {
+        if (_hasCaughtPlayer || player == null || other == null)
+        {
+            return;
+        }
+
+        if (other.transform == player || other.transform.IsChildOf(player))
+        {
+            CatchPlayer();
         }
     }
 
