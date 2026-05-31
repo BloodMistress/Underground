@@ -11,6 +11,10 @@ public class EquipmentItems : MonoBehaviour
 {
     [Header("Input")]
     [SerializeField] private KeyCode pickupKey = KeyCode.E;
+    [SerializeField] private KeyCode useItemKey = KeyCode.F;
+
+    [Header("Bucket Oxygen")]
+    [SerializeField] private string bucketItemName = "bucket";
 
     [Header("Detection")]
     [SerializeField] private Transform interactionOrigin;
@@ -25,12 +29,18 @@ public class EquipmentItems : MonoBehaviour
     [SerializeField] private Sprite key2Sprite;
 
     private Camera _mainCamera;
+    private OxygenSystem _oxygenSystem;
 
     private void Update()
     {
         if (WasPickupPressed())
         {
             TryPickupItem();
+        }
+
+        if (WasUseItemPressed())
+        {
+            TryUseSelectedItem();
         }
     }
 
@@ -41,6 +51,16 @@ public class EquipmentItems : MonoBehaviour
         return keyboard != null && keyboard.eKey.wasPressedThisFrame;
 #else
         return Input.GetKeyDown(pickupKey);
+#endif
+    }
+
+    private bool WasUseItemPressed()
+    {
+#if ENABLE_INPUT_SYSTEM
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null && keyboard.fKey.wasPressedThisFrame;
+#else
+        return Input.GetKeyDown(useItemKey);
 #endif
     }
 
@@ -63,6 +83,35 @@ public class EquipmentItems : MonoBehaviour
 
         LogDebug("Picked up " + pickup.Root.name + ".");
         pickup.Root.gameObject.SetActive(false);
+    }
+
+    private void TryUseSelectedItem()
+    {
+        if (!IsSelectedBucket())
+        {
+            LogDebug("No usable bucket selected.");
+            return;
+        }
+
+        ResolveOxygenSystem();
+        if (_oxygenSystem == null)
+        {
+            LogDebug("Bucket cannot restore oxygen because OxygenSystem was not found on the player.");
+            return;
+        }
+
+        if (_oxygenSystem.TryUseBucketOxygen())
+        {
+            LogDebug("Used bucket oxygen.");
+            return;
+        }
+
+        LogDebug("Bucket oxygen was not used. It works underwater once per dive and only when oxygen is not full.");
+    }
+
+    private bool IsSelectedBucket()
+    {
+        return NormalizeName(MetroHUD.SelectedItemName) == NormalizeName(bucketItemName);
     }
 
     private PickupTarget FindBestPickupTarget()
@@ -174,6 +223,20 @@ public class EquipmentItems : MonoBehaviour
         }
 
         interactionOrigin = transform.Find("PlayerCameraRoot");
+    }
+
+    private void ResolveOxygenSystem()
+    {
+        if (_oxygenSystem != null)
+        {
+            return;
+        }
+
+        _oxygenSystem = GetComponent<OxygenSystem>();
+        if (_oxygenSystem == null)
+        {
+            _oxygenSystem = GetComponentInParent<OxygenSystem>();
+        }
     }
 
 #if UNITY_EDITOR

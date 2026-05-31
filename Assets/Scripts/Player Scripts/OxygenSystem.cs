@@ -14,6 +14,14 @@ public class OxygenSystem : MonoBehaviour
     [SerializeField] private float waterDrainRate = 9f;
     [SerializeField] private float recoveryRate = 8f;
 
+    [Header("Monster Pressure")]
+    [SerializeField] private Transform monsterThreat;
+    [SerializeField] private float monsterThreatRadius = 6f;
+    [SerializeField] private float monsterThreatExtraDrainRate = 7f;
+
+    [Header("Bucket Oxygen")]
+    [SerializeField] private float bucketOxygenAmount = 18f;
+
     [Header("Breathing Check")]
     [SerializeField] private Transform breathingPoint;
     [SerializeField] private bool useMainCameraAsBreathingPoint = true;
@@ -33,6 +41,14 @@ public class OxygenSystem : MonoBehaviour
     [SerializeField] private float underwaterOverlayFadeSpeed = 3.5f;
     [SerializeField] private Image underwaterOverlayImage;
 
+    [Header("Critical Oxygen Warning")]
+    [SerializeField] private bool createCriticalOxygenOverlay = true;
+    [SerializeField] private Color criticalOxygenOverlayColor = new Color(1f, 0.04f, 0.02f, 0.42f);
+    [SerializeField] private float criticalOxygenThreshold = 0.25f;
+    [SerializeField] private float criticalOxygenFadeSpeed = 5f;
+    [SerializeField] private float criticalOxygenPulseSpeed = 2.5f;
+    [SerializeField] private Image criticalOxygenOverlayImage;
+
     [Header("Events")]
     public UnityEvent onOxygenEmpty;
 
@@ -42,12 +58,16 @@ public class OxygenSystem : MonoBehaviour
     private bool _isDead;
     private bool _wasInWater;
     private bool _underwaterAudioConfigured;
+    private bool _bucketOxygenAvailableThisDive;
+    private bool _wasTouchingWaterForBucket;
     private Canvas _underwaterOverlayCanvas;
+    private Canvas _criticalOxygenOverlayCanvas;
 
     public float CurrentOxygen => _oxygen;
     public float MaxOxygen => maxOxygen;
     public float Oxygen01 => maxOxygen <= 0f ? 0f : _oxygen / maxOxygen;
     public bool IsInWater => IsBreathingPointInWater();
+    public bool IsTouchingWater => _waterZoneCount > 0 || IsInWater;
     public bool IsInToxicGas => _toxicGasZoneCount > 0;
     public bool IsInBreathHazard => IsInWater || IsInToxicGas;
 
@@ -64,6 +84,7 @@ public class OxygenSystem : MonoBehaviour
 
         EnsureUnderwaterAudioSource();
         EnsureUnderwaterViewOverlay();
+        EnsureCriticalOxygenOverlay();
         RefreshUI();
     }
 
@@ -75,9 +96,12 @@ public class OxygenSystem : MonoBehaviour
         }
 
         ResolveBreathingPoint();
+        ResolveMonsterThreat();
+        UpdateBucketOxygenAvailability();
         UpdateOxygen(Time.deltaTime);
         UpdateUnderwaterAudio(Time.deltaTime);
         UpdateUnderwaterViewOverlay(Time.deltaTime);
+        UpdateCriticalOxygenOverlay(Time.deltaTime);
         RefreshUI();
 
         if (_oxygen <= 0f)
@@ -122,6 +146,20 @@ public class OxygenSystem : MonoBehaviour
         RefreshUI();
     }
 
+    public bool TryUseBucketOxygen()
+    {
+        UpdateBucketOxygenAvailability();
+
+        if (!IsInWater || !_bucketOxygenAvailableThisDive || bucketOxygenAmount <= 0f || _oxygen >= maxOxygen - 0.01f)
+        {
+            return false;
+        }
+
+        _bucketOxygenAvailableThisDive = false;
+        AddOxygen(bucketOxygenAmount);
+        return true;
+    }
+
     private void UpdateOxygen(float deltaTime)
     {
         if (!IsInBreathHazard)
@@ -140,7 +178,40 @@ public class OxygenSystem : MonoBehaviour
             drainRate = Mathf.Max(drainRate, toxicGasDrainRate);
         }
 
+        drainRate += GetMonsterThreatDrainRate();
         _oxygen = Mathf.Clamp(_oxygen - drainRate * deltaTime, 0f, maxOxygen);
+    }
+
+    private float GetMonsterThreatDrainRate()
+    {
+        if (monsterThreat == null || monsterThreatRadius <= 0f || monsterThreatExtraDrainRate <= 0f)
+        {
+            return 0f;
+        }
+
+        float distance = Vector3.Distance(transform.position, monsterThreat.position);
+        if (distance > monsterThreatRadius)
+        {
+            return 0f;
+        }
+
+        float proximity01 = 1f - Mathf.Clamp01(distance / monsterThreatRadius);
+        return monsterThreatExtraDrainRate * proximity01;
+    }
+
+    private void UpdateBucketOxygenAvailability()
+    {
+        bool isTouchingWater = IsTouchingWater;
+        if (isTouchingWater && !_wasTouchingWaterForBucket)
+        {
+            _bucketOxygenAvailableThisDive = true;
+        }
+        else if (!isTouchingWater)
+        {
+            _bucketOxygenAvailableThisDive = false;
+        }
+
+        _wasTouchingWaterForBucket = isTouchingWater;
     }
 
     private bool IsBreathingPointInWater()
@@ -174,6 +245,20 @@ public class OxygenSystem : MonoBehaviour
         }
 
         breathingPoint = cameraTarget;
+    }
+
+    private void ResolveMonsterThreat()
+    {
+        if (monsterThreat != null)
+        {
+            return;
+        }
+
+        MonsterAI monster = FindFirstObjectByType<MonsterAI>();
+        if (monster != null)
+        {
+            monsterThreat = monster.transform;
+        }
     }
 
     private void RefreshUI()
@@ -292,6 +377,66 @@ public class OxygenSystem : MonoBehaviour
         if (_underwaterOverlayCanvas != null)
         {
             _underwaterOverlayCanvas.enabled = currentColor.a > 0.001f || isInWater;
+        }
+    }
+
+    private void EnsureCriticalOxygenOverlay()
+    {
+        if (!createCriticalOxygenOverlay || criticalOxygenOverlayImage != null)
+        {
+            return;
+        }
+
+        GameObject canvasObject = new GameObject("CriticalOxygenOverlayCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        _criticalOxygenOverlayCanvas = canvasObject.GetComponent<Canvas>();
+        _criticalOxygenOverlayCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        _criticalOxygenOverlayCanvas.sortingOrder = 60;
+
+        CanvasScaler scaler = canvasObject.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1366f, 768f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        RectTransform overlayRect = new GameObject("CriticalOxygenOverlay", typeof(RectTransform), typeof(Image)).GetComponent<RectTransform>();
+        overlayRect.SetParent(canvasObject.transform, false);
+        overlayRect.anchorMin = Vector2.zero;
+        overlayRect.anchorMax = Vector2.one;
+        overlayRect.offsetMin = Vector2.zero;
+        overlayRect.offsetMax = Vector2.zero;
+
+        criticalOxygenOverlayImage = overlayRect.GetComponent<Image>();
+        criticalOxygenOverlayImage.color = new Color(criticalOxygenOverlayColor.r, criticalOxygenOverlayColor.g, criticalOxygenOverlayColor.b, 0f);
+        criticalOxygenOverlayImage.raycastTarget = false;
+    }
+
+    private void UpdateCriticalOxygenOverlay(float deltaTime)
+    {
+        EnsureCriticalOxygenOverlay();
+        if (criticalOxygenOverlayImage == null)
+        {
+            return;
+        }
+
+        float threshold = Mathf.Clamp01(criticalOxygenThreshold);
+        float targetAlpha = 0f;
+        if (threshold > 0f && Oxygen01 <= threshold)
+        {
+            float severity = Mathf.InverseLerp(threshold, 0f, Oxygen01);
+            float pulse = Mathf.Lerp(0.35f, 1f, Mathf.PingPong(Time.time * criticalOxygenPulseSpeed, 1f));
+            targetAlpha = criticalOxygenOverlayColor.a * severity * pulse;
+        }
+
+        Color currentColor = criticalOxygenOverlayImage.color;
+        currentColor.r = criticalOxygenOverlayColor.r;
+        currentColor.g = criticalOxygenOverlayColor.g;
+        currentColor.b = criticalOxygenOverlayColor.b;
+        currentColor.a = Mathf.MoveTowards(currentColor.a, targetAlpha, criticalOxygenFadeSpeed * deltaTime);
+        criticalOxygenOverlayImage.color = currentColor;
+
+        if (_criticalOxygenOverlayCanvas != null)
+        {
+            _criticalOxygenOverlayCanvas.enabled = currentColor.a > 0.001f || targetAlpha > 0f;
         }
     }
 
