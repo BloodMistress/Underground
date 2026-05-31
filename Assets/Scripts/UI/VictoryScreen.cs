@@ -39,6 +39,12 @@ public class VictoryScreen : MonoBehaviour
         if (_instance == null)
         {
             Canvas canvas = FindFirstObjectByType<Canvas>();
+            if (canvas == null)
+            {
+                GameObject canvasObject = new GameObject("VictoryScreenCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+                canvas = canvasObject.GetComponent<Canvas>();
+            }
+
             if (canvas != null)
             {
                 _instance = canvas.gameObject.AddComponent<VictoryScreen>();

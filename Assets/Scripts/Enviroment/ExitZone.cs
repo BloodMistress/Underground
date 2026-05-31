@@ -4,10 +4,10 @@ public class ExitZone : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("Player") || other.GetComponentInParent<OxygenSystem>() != null)
         {
-            Debug.Log("Вы выбрались!");
-            Time.timeScale = 0f;
+            Debug.Log("Player reached the exit.");
+            VictoryScreen.ShowVictory();
         }
     }
 }

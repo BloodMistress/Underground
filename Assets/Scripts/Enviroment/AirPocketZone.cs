@@ -28,6 +28,16 @@ public class AirPocketZone : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
+        RestoreOxygen(other, Time.deltaTime);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        RestoreOxygen(other, Time.deltaTime);
+    }
+
+    private void RestoreOxygen(Collider other, float deltaTime)
+    {
         if (oxygenAmount <= 0f)
         {
             if (destroyWhenEmpty)
@@ -43,7 +53,7 @@ public class AirPocketZone : MonoBehaviour
             return;
         }
 
-        float transfer = Mathf.Min(oxygenPerSecond * Time.deltaTime, oxygenAmount);
+        float transfer = Mathf.Min(oxygenPerSecond * deltaTime, oxygenAmount);
         oxygen.AddOxygen(transfer);
         oxygenAmount -= transfer;
     }

@@ -70,6 +70,16 @@ public class MetroHUD : MonoBehaviour
         return _instance != null && _instance.AddInventoryItem(itemSprite);
     }
 
+    public static bool HasInventoryItem(string itemName)
+    {
+        if (_instance == null)
+        {
+            _instance = FindFirstObjectByType<MetroHUD>();
+        }
+
+        return _instance != null && _instance.ContainsInventoryItem(itemName);
+    }
+
     private bool AddInventoryItem(Sprite itemSprite)
     {
         if (itemSprite == null)
@@ -298,6 +308,41 @@ public class MetroHUD : MonoBehaviour
         }
 
         return _itemImages[_selectedSlotIndex] != null ? _itemImages[_selectedSlotIndex].sprite : null;
+    }
+
+    private bool ContainsInventoryItem(string itemName)
+    {
+        if (string.IsNullOrWhiteSpace(itemName))
+        {
+            return true;
+        }
+
+        string normalizedItemName = NormalizeName(itemName);
+        foreach (Image itemImage in _itemImages)
+        {
+            if (itemImage == null || itemImage.sprite == null)
+            {
+                continue;
+            }
+
+            if (NormalizeName(itemImage.sprite.name) == normalizedItemName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeName(string objectName)
+    {
+        int suffixIndex = objectName.IndexOf('(');
+        if (suffixIndex >= 0)
+        {
+            objectName = objectName.Substring(0, suffixIndex);
+        }
+
+        return objectName.ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty);
     }
 
     private RectTransform CreateRect(string objectName, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 sizeDelta)

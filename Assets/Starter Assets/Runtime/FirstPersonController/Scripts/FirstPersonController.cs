@@ -46,6 +46,22 @@ namespace StarterAssets
         [Range(0.1f, 1.0f)]
         public float CrouchVisibilityMultiplier = 0.45f;
 
+        [Header("Swimming")]
+        [Tooltip("Move speed multiplier while the player is in water")]
+        public float SwimSpeedMultiplier = 0.8f;
+        [Tooltip("CharacterController height while swimming")]
+        public float SwimHeight = 0.9f;
+        [Tooltip("Local camera target Y position while swimming")]
+        public float SwimCameraHeight = 0.55f;
+        [Tooltip("How much the visible capsule tilts forward while swimming")]
+        public float SwimVisualPitch = 82.0f;
+        [Tooltip("Idle vertical velocity while floating in water")]
+        public float SwimFloatVelocity = 0.12f;
+        [Tooltip("Upward speed while holding jump in water")]
+        public float SwimUpSpeed = 2.4f;
+        [Tooltip("Downward speed while holding crouch in water")]
+        public float SwimDownSpeed = 1.4f;
+
         [Header("Player Grounded")]
         [Tooltip("If the character is grounded or not. Not part of the CharacterController built in grounded check")]
         public bool Grounded = true;
@@ -68,6 +84,7 @@ namespace StarterAssets
         [Tooltip("Use Main Camera directly when there is no Cinemachine PlayerFollowCamera in the scene")]
         public bool DriveMainCameraWithoutCinemachine = true;
         public bool IsCrouching { get; private set; }
+        public bool IsSwimming { get; private set; }
         public float VisibilityMultiplier => IsCrouching ? CrouchVisibilityMultiplier : 1.0f;
 
         private float _cinemachineTargetPitch;
@@ -82,6 +99,9 @@ namespace StarterAssets
         private Vector3 _crouchingCenter;
         private Vector3 _standingCameraLocalPosition;
         private Transform _capsuleVisual;
+        private Quaternion _capsuleVisualStandingLocalRotation;
+        private System.Type _waterZoneType;
+        private System.Reflection.MethodInfo _waterContainsPointMethod;
 
 #if ENABLE_INPUT_SYSTEM
         private PlayerInput _playerInput;
@@ -132,6 +152,10 @@ namespace StarterAssets
 
             Transform capsule = transform.Find("Capsule");
             _capsuleVisual = capsule != null ? capsule : null;
+            if (_capsuleVisual != null)
+            {
+                _capsuleVisualStandingLocalRotation = _capsuleVisual.localRotation;
+            }
 
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
@@ -140,9 +164,9 @@ namespace StarterAssets
 
         private void Update()
         {
-            JumpAndGravity();
             GroundedCheck();
             UpdateCrouch();
+            JumpAndGravity();
             Move();
         }
 
@@ -201,7 +225,7 @@ namespace StarterAssets
                 return;
             }
 
-            float targetSpeed = IsCrouching ? CrouchSpeed : (_input.sprint ? SprintSpeed : MoveSpeed);
+            float targetSpeed = IsSwimming ? MoveSpeed * SwimSpeedMultiplier : (IsCrouching ? CrouchSpeed : (_input.sprint ? SprintSpeed : MoveSpeed));
 
             if (_input.move == Vector2.zero)
             {
@@ -234,7 +258,8 @@ namespace StarterAssets
 
         private void UpdateCrouch()
         {
-            bool wantsCrouch = IsCrouchPressed();
+            IsSwimming = IsPlayerTouchingWater();
+            bool wantsCrouch = !IsSwimming && IsCrouchPressed();
 
             if (!wantsCrouch && IsCrouching && !CanStandUp())
             {
@@ -243,8 +268,8 @@ namespace StarterAssets
 
             IsCrouching = wantsCrouch;
 
-            float targetHeight = IsCrouching ? CrouchHeight : _standingHeight;
-            Vector3 targetCenter = IsCrouching ? _crouchingCenter : _standingCenter;
+            float targetHeight = IsSwimming ? SwimHeight : (IsCrouching ? CrouchHeight : _standingHeight);
+            Vector3 targetCenter = IsSwimming ? GetLoweredControllerCenter(targetHeight) : (IsCrouching ? _crouchingCenter : _standingCenter);
             float blend = Time.deltaTime * CrouchTransitionSpeed;
 
             _controller.height = Mathf.Lerp(_controller.height, targetHeight, blend);
@@ -253,16 +278,52 @@ namespace StarterAssets
             if (CinemachineCameraTarget != null)
             {
                 Vector3 targetCameraPosition = _standingCameraLocalPosition;
-                targetCameraPosition.y = IsCrouching ? CrouchCameraHeight : _standingCameraLocalPosition.y;
+                targetCameraPosition.y = IsSwimming ? SwimCameraHeight : (IsCrouching ? CrouchCameraHeight : _standingCameraLocalPosition.y);
                 CinemachineCameraTarget.transform.localPosition = Vector3.Lerp(CinemachineCameraTarget.transform.localPosition, targetCameraPosition, blend);
             }
 
             if (_capsuleVisual != null)
             {
                 Vector3 targetScale = _capsuleVisual.localScale;
-                targetScale.y = IsCrouching ? CrouchHeight / _standingHeight : 1.0f;
+                targetScale.y = IsSwimming ? SwimHeight / _standingHeight : (IsCrouching ? CrouchHeight / _standingHeight : 1.0f);
                 _capsuleVisual.localScale = Vector3.Lerp(_capsuleVisual.localScale, targetScale, blend);
+
+                Quaternion targetRotation = IsSwimming ? _capsuleVisualStandingLocalRotation * Quaternion.Euler(SwimVisualPitch, 0f, 0f) : _capsuleVisualStandingLocalRotation;
+                _capsuleVisual.localRotation = Quaternion.Slerp(_capsuleVisual.localRotation, targetRotation, blend);
             }
+        }
+
+        private Vector3 GetLoweredControllerCenter(float targetHeight)
+        {
+            return _standingCenter - Vector3.up * ((_standingHeight - targetHeight) * 0.5f);
+        }
+
+        private bool IsPlayerTouchingWater()
+        {
+            Vector3 bodyPoint = transform.position + (_controller != null ? _controller.center : Vector3.up);
+            if (IsPointInWater(bodyPoint))
+            {
+                return true;
+            }
+
+            return CinemachineCameraTarget != null && IsPointInWater(CinemachineCameraTarget.transform.position);
+        }
+
+        private bool IsPointInWater(Vector3 point)
+        {
+            if (_waterContainsPointMethod == null)
+            {
+                _waterZoneType = System.Type.GetType("WaterZone, Assembly-CSharp");
+                _waterContainsPointMethod = _waterZoneType?.GetMethod("ContainsPoint", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+            }
+
+            if (_waterContainsPointMethod == null)
+            {
+                return false;
+            }
+
+            object result = _waterContainsPointMethod.Invoke(null, new object[] { point });
+            return result is bool isInWater && isInWater;
         }
 
         private bool IsCrouchPressed()
@@ -294,6 +355,25 @@ namespace StarterAssets
         {
             if (_input == null)
             {
+                return;
+            }
+
+            if (IsSwimming)
+            {
+                _fallTimeoutDelta = FallTimeout;
+                _jumpTimeoutDelta = JumpTimeout;
+
+                float targetVerticalSpeed = SwimFloatVelocity;
+                if (_input.jump)
+                {
+                    targetVerticalSpeed = SwimUpSpeed;
+                }
+                else if (IsCrouchPressed())
+                {
+                    targetVerticalSpeed = -SwimDownSpeed;
+                }
+
+                _verticalVelocity = Mathf.MoveTowards(_verticalVelocity, targetVerticalSpeed, Time.deltaTime * SpeedChangeRate);
                 return;
             }
 

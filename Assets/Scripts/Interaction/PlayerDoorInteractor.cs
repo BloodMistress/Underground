@@ -76,10 +76,10 @@ public class PlayerDoorInteractor : MonoBehaviour
             return;
         }
 
-        string normalizedDoorName = NormalizeName(doorRoot.name);
-        if (normalizedDoorName == "door3" && !IsRequiredInventoryItemSelected(door3RequiredItemName))
+        bool isVictoryDoor = IsVictoryDoor(doorRoot);
+        if (isVictoryDoor && !HasRequiredInventoryItem(door3RequiredItemName))
         {
-            LogLockedDoorMessage("door3 needs selected inventory item: " + door3RequiredItemName + ".");
+            LogLockedDoorMessage("door3 needs inventory item: " + door3RequiredItemName + ".");
             return;
         }
 
@@ -93,7 +93,7 @@ public class PlayerDoorInteractor : MonoBehaviour
         }
 
         bool isOpen = door.Toggle();
-        if (isOpen && normalizedDoorName == "door3")
+        if (isOpen && isVictoryDoor)
         {
             VictoryScreen.ShowVictory();
         }
@@ -159,13 +159,29 @@ public class PlayerDoorInteractor : MonoBehaviour
     private static bool IsRuntimeDoor(Transform candidate)
     {
         string normalized = NormalizeName(candidate.name);
-        if (normalized != "door" && normalized != "door2" && normalized != "door3")
+        if (!normalized.Contains("door"))
         {
             return false;
         }
 
+        return HasParentNamed(candidate, "doors");
+    }
+
+    private static bool HasParentNamed(Transform candidate, string parentName)
+    {
         Transform parent = candidate.parent;
-        return parent != null && NormalizeName(parent.name) == "doors";
+        string normalizedParentName = NormalizeName(parentName);
+        while (parent != null)
+        {
+            if (NormalizeName(parent.name) == normalizedParentName)
+            {
+                return true;
+            }
+
+            parent = parent.parent;
+        }
+
+        return false;
     }
 
     private static Transform FindDoorPivot(Transform doorRoot)
@@ -244,14 +260,19 @@ public class PlayerDoorInteractor : MonoBehaviour
         return objectName.ToLowerInvariant().Replace(" ", string.Empty).Replace("_", string.Empty);
     }
 
-    private static bool IsRequiredInventoryItemSelected(string requiredItemName)
+    private static bool HasRequiredInventoryItem(string requiredItemName)
     {
         if (string.IsNullOrWhiteSpace(requiredItemName))
         {
             return true;
         }
 
-        return NormalizeName(MetroHUD.SelectedItemName) == NormalizeName(requiredItemName);
+        return NormalizeName(MetroHUD.SelectedItemName) == NormalizeName(requiredItemName) || MetroHUD.HasInventoryItem(requiredItemName);
+    }
+
+    private static bool IsVictoryDoor(Transform doorRoot)
+    {
+        return doorRoot != null && NormalizeName(doorRoot.name) == "door3";
     }
 
     private void LogLockedDoorMessage(string message)
