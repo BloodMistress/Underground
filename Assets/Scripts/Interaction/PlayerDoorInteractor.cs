@@ -95,6 +95,7 @@ public class PlayerDoorInteractor : MonoBehaviour
         bool isOpen = door.Toggle();
         if (isOpen && isVictoryDoor)
         {
+            Debug.Log("[PlayerDoorInteractor] door3 opened with required item. Showing victory screen.", this);
             VictoryScreen.ShowVictory();
         }
     }

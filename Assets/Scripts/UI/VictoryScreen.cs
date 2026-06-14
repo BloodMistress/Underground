@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -38,17 +39,7 @@ public class VictoryScreen : MonoBehaviour
 
         if (_instance == null)
         {
-            Canvas canvas = FindFirstObjectByType<Canvas>();
-            if (canvas == null)
-            {
-                GameObject canvasObject = new GameObject("VictoryScreenCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-                canvas = canvasObject.GetComponent<Canvas>();
-            }
-
-            if (canvas != null)
-            {
-                _instance = canvas.gameObject.AddComponent<VictoryScreen>();
-            }
+            _instance = CreateVictoryScreenInstance();
         }
 
         if (_instance != null)
@@ -62,18 +53,29 @@ public class VictoryScreen : MonoBehaviour
         Cursor.visible = true;
     }
 
+    private static VictoryScreen CreateVictoryScreenInstance()
+    {
+        GameObject canvasObject = new GameObject("VictoryScreenCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        return canvasObject.AddComponent<VictoryScreen>();
+    }
+
     private void Show()
     {
         AssignDefaultSpritesInEditor();
+        ConfigureCanvas();
         if (_root == null)
         {
             BuildScreen();
         }
 
+        gameObject.SetActive(true);
         _root.SetActive(true);
+        _root.transform.SetAsLastSibling();
+        EnsureEventSystem();
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        Debug.Log("[VictoryScreen] Victory screen shown.", this);
     }
 
     private void Hide()
@@ -94,15 +96,26 @@ public class VictoryScreen : MonoBehaviour
     {
         Canvas canvas = GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 110;
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 5000;
 
         CanvasScaler scaler = GetComponent<CanvasScaler>();
+        if (scaler == null)
+        {
+            scaler = gameObject.AddComponent<CanvasScaler>();
+        }
+
         if (scaler != null)
         {
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1366f, 768f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
+        }
+
+        if (GetComponent<GraphicRaycaster>() == null)
+        {
+            gameObject.AddComponent<GraphicRaycaster>();
         }
     }
 
@@ -126,6 +139,11 @@ public class VictoryScreen : MonoBehaviour
         CreateImage("FirecrackerRight", root, firecrackerRightSprite, new Vector2(1f, 0f), new Vector2(-380f, 160f), new Vector2(570f, 420f), false);
         CreateImage("VictoryTitle", root, victoryTitleSprite, new Vector2(0.5f, 0.5f), new Vector2(0f, 170f), new Vector2(650f, 145f), false);
         CreateButton("MenuButton", root, menuButtonSprite, new Vector2(0f, -40f), new Vector2(420f, 78f), ReturnToMenu);
+
+        if (victoryTitleSprite == null)
+        {
+            CreateText("VictoryTitleText", root, "\u0412\u042b \u0412\u042b\u0418\u0413\u0420\u0410\u041b\u0418", new Vector2(0.5f, 0.5f), new Vector2(0f, 170f), new Vector2(720f, 130f), 74);
+        }
     }
 
     private static RectTransform CreateRect(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 position, Vector2 size)
@@ -161,7 +179,36 @@ public class VictoryScreen : MonoBehaviour
         button.targetGraphic = image;
         button.transition = Selectable.Transition.ColorTint;
         button.onClick.AddListener(onClick);
+
+        if (sprite == null)
+        {
+            CreateText(name + "Text", image.transform, "\u0412 \u041c\u0415\u041d\u042e", new Vector2(0.5f, 0.5f), Vector2.zero, size, 42);
+        }
+
         return button;
+    }
+
+    private static Text CreateText(string name, Transform parent, string text, Vector2 anchor, Vector2 position, Vector2 size, int fontSize)
+    {
+        RectTransform rect = CreateRect(name, parent, anchor, anchor, new Vector2(0.5f, 0.5f), position, size);
+        Text label = rect.gameObject.AddComponent<Text>();
+        label.text = text;
+        label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        label.fontSize = fontSize;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = Color.white;
+        label.raycastTarget = false;
+        return label;
+    }
+
+    private static void EnsureEventSystem()
+    {
+        if (FindFirstObjectByType<EventSystem>() != null)
+        {
+            return;
+        }
+
+        new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
     }
 
     private void AssignDefaultSpritesInEditor()
