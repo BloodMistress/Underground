@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [DisallowMultipleComponent]
 public class MonsterAI : MonoBehaviour
@@ -60,6 +63,17 @@ public class MonsterAI : MonoBehaviour
     [SerializeField] private string runningParameter = "IsRunning";
     [SerializeField] private string lookingParameter = "IsLooking";
 
+    [Header("Footsteps")]
+    [SerializeField] private AudioClip monsterFootstepClip;
+    [SerializeField] private AudioSource monsterFootstepSource;
+    [SerializeField] private float patrolFootstepVolume = 0.75f;
+    [SerializeField] private float chaseFootstepVolume = 1f;
+    [SerializeField] private float monsterFootstepVolumeMultiplier = 1.35f;
+    [SerializeField] private float minFootstepSpeed = 0.12f;
+    [SerializeField] private float monsterFootstepSpatialBlend = 0.65f;
+    [SerializeField] private float monsterFootstepMinDistance = 4f;
+    [SerializeField] private float monsterFootstepMaxDistance = 35f;
+
     [Header("Events")]
     public UnityEvent onPlayerCaught;
 
@@ -77,6 +91,7 @@ public class MonsterAI : MonoBehaviour
     private bool _hasCaughtPlayer;
     private bool _warnedAboutNavigation;
     private int _lastRequestedAnimationStateHash;
+    private bool _monsterFootstepAudioConfigured;
 
     private bool CanNavigate => _agent != null && _agent.enabled && _agent.isOnNavMesh;
 
@@ -96,6 +111,7 @@ public class MonsterAI : MonoBehaviour
             eyes = transform;
         }
 
+        EnsureMonsterFootstepAudioSource();
         EnterPatrol();
     }
 
@@ -136,6 +152,7 @@ public class MonsterAI : MonoBehaviour
         }
 
         UpdateAnimation();
+        UpdateMonsterFootsteps(Time.deltaTime);
     }
 
     private void ResolvePlayer()
@@ -536,7 +553,105 @@ public class MonsterAI : MonoBehaviour
         StopMoving();
         Debug.Log("Monster caught the player.");
         onPlayerCaught?.Invoke();
+        if (monsterFootstepSource != null && monsterFootstepSource.isPlaying)
+        {
+            monsterFootstepSource.Stop();
+        }
+
         GameOverScreen.ShowGameOver();
+    }
+
+    private void EnsureMonsterFootstepAudioSource()
+    {
+        AssignDefaultMonsterFootstepClipInEditor();
+        if (monsterFootstepClip == null)
+        {
+            return;
+        }
+
+        if (monsterFootstepSource == null)
+        {
+            AudioSource[] sources = GetComponentsInChildren<AudioSource>(true);
+            foreach (AudioSource source in sources)
+            {
+                if (source != null && source.clip != null && source.clip.name == monsterFootstepClip.name)
+                {
+                    monsterFootstepSource = source;
+                    break;
+                }
+            }
+        }
+
+        if (monsterFootstepSource == null)
+        {
+            monsterFootstepSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        if (_monsterFootstepAudioConfigured && monsterFootstepSource.clip == monsterFootstepClip)
+        {
+            ApplyMonsterFootstepSourceSettings();
+            return;
+        }
+
+        monsterFootstepSource.clip = monsterFootstepClip;
+        ApplyMonsterFootstepSourceSettings();
+        _monsterFootstepAudioConfigured = true;
+    }
+
+    private void ApplyMonsterFootstepSourceSettings()
+    {
+        if (monsterFootstepSource == null)
+        {
+            return;
+        }
+
+        monsterFootstepSource.loop = true;
+        monsterFootstepSource.playOnAwake = false;
+        monsterFootstepSource.spatialBlend = Mathf.Clamp01(monsterFootstepSpatialBlend);
+        monsterFootstepSource.mute = false;
+        monsterFootstepSource.ignoreListenerPause = true;
+        monsterFootstepSource.ignoreListenerVolume = true;
+        monsterFootstepSource.priority = 32;
+        monsterFootstepSource.rolloffMode = AudioRolloffMode.Linear;
+        monsterFootstepSource.minDistance = Mathf.Max(0.1f, monsterFootstepMinDistance);
+        monsterFootstepSource.maxDistance = Mathf.Max(monsterFootstepSource.minDistance + 0.1f, monsterFootstepMaxDistance);
+    }
+
+    private void UpdateMonsterFootsteps(float deltaTime)
+    {
+        EnsureMonsterFootstepAudioSource();
+        if (!ShouldPlayMonsterFootsteps())
+        {
+            if (monsterFootstepSource != null && monsterFootstepSource.isPlaying)
+            {
+                monsterFootstepSource.Stop();
+            }
+
+            return;
+        }
+
+        bool isChasing = _state == MonsterState.Chase;
+        monsterFootstepSource.volume = Mathf.Clamp01((isChasing ? chaseFootstepVolume : patrolFootstepVolume) * monsterFootstepVolumeMultiplier);
+        monsterFootstepSource.pitch = isChasing ? 1.45f : 1f;
+        if (!monsterFootstepSource.isPlaying)
+        {
+            monsterFootstepSource.Play();
+        }
+    }
+
+    private bool ShouldPlayMonsterFootsteps()
+    {
+        if (monsterFootstepClip == null || monsterFootstepSource == null || !CanNavigate || _hasCaughtPlayer)
+        {
+            return false;
+        }
+
+        if (_state == MonsterState.LookAround)
+        {
+            return false;
+        }
+
+        return _agent.velocity.magnitude >= minFootstepSpeed;
     }
 
     private void UpdateAnimation()
@@ -671,6 +786,35 @@ public class MonsterAI : MonoBehaviour
 
         return 0f;
     }
+
+    private void AssignDefaultMonsterFootstepClipInEditor()
+    {
+#if UNITY_EDITOR
+        if (monsterFootstepClip != null)
+        {
+            return;
+        }
+
+        monsterFootstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/music and sounds/Monster_footsteps.mp3");
+        if (monsterFootstepClip != null)
+        {
+            return;
+        }
+
+        string[] guids = AssetDatabase.FindAssets("Monster_footsteps t:AudioClip", new[] { "Assets/music and sounds" });
+        if (guids.Length > 0)
+        {
+            monsterFootstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(guids[0]));
+        }
+#endif
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        AssignDefaultMonsterFootstepClipInEditor();
+    }
+#endif
 
     private void OnTriggerEnter(Collider other)
     {

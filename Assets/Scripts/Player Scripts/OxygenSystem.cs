@@ -32,7 +32,8 @@ public class OxygenSystem : MonoBehaviour
     [Header("Underwater Audio")]
     [SerializeField] private AudioClip underwaterAmbientClip;
     [SerializeField] private AudioSource underwaterAmbientSource;
-    [SerializeField] private float underwaterAmbientVolume = 0.65f;
+    [SerializeField] private float underwaterAmbientVolume = 0.85f;
+    [SerializeField] private float underwaterAmbientVolumeMultiplier = 1.35f;
     [SerializeField] private float underwaterFadeSpeed = 4f;
 
     [Header("Underwater View")]
@@ -297,6 +298,7 @@ public class OxygenSystem : MonoBehaviour
         underwaterAmbientSource.spatialBlend = 0f;
         underwaterAmbientSource.volume = 0f;
         underwaterAmbientSource.mute = false;
+        underwaterAmbientSource.ignoreListenerVolume = true;
         underwaterAmbientSource.ignoreListenerPause = true;
         underwaterAmbientSource.priority = 32;
         _underwaterAudioConfigured = true;
@@ -316,7 +318,7 @@ public class OxygenSystem : MonoBehaviour
             underwaterAmbientSource.Play();
         }
 
-        float targetVolume = isInWater ? underwaterAmbientVolume : 0f;
+        float targetVolume = isInWater ? Mathf.Clamp01(underwaterAmbientVolume * underwaterAmbientVolumeMultiplier) : 0f;
         underwaterAmbientSource.volume = Mathf.MoveTowards(underwaterAmbientSource.volume, targetVolume, underwaterFadeSpeed * deltaTime);
 
         if (!isInWater && _wasInWater && underwaterAmbientSource.volume <= 0.001f)

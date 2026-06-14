@@ -2,6 +2,9 @@ using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace StarterAssets
 {
@@ -61,6 +64,8 @@ namespace StarterAssets
         public float SwimUpSpeed = 2.4f;
         [Tooltip("Downward speed while holding crouch in water")]
         public float SwimDownSpeed = 1.4f;
+        [Tooltip("How long swimming remains active after the body briefly leaves water. Prevents jitter at the water surface")]
+        public float SwimExitGraceTime = 0.35f;
 
         [Header("Player Grounded")]
         [Tooltip("If the character is grounded or not. Not part of the CharacterController built in grounded check")]
@@ -83,6 +88,18 @@ namespace StarterAssets
         [Header("Camera Fallback")]
         [Tooltip("Use Main Camera directly when there is no Cinemachine PlayerFollowCamera in the scene")]
         public bool DriveMainCameraWithoutCinemachine = true;
+
+        [Header("Footsteps")]
+        [SerializeField] private AudioClip playerFootstepClip;
+        [SerializeField] private AudioSource footstepAudioSource;
+        [SerializeField] private float walkStepInterval = 0.55f;
+        [SerializeField] private float sprintStepInterval = 0.36f;
+        [SerializeField] private float crouchStepInterval = 0.78f;
+        [SerializeField] private float walkFootstepVolume = 0.48f;
+        [SerializeField] private float sprintFootstepVolume = 0.58f;
+        [SerializeField] private float crouchFootstepVolume = 0.2f;
+        [SerializeField] private float minFootstepSpeed = 0.18f;
+
         public bool IsCrouching { get; private set; }
         public bool IsSwimming { get; private set; }
         public float VisibilityMultiplier => IsCrouching ? CrouchVisibilityMultiplier : 1.0f;
@@ -102,6 +119,9 @@ namespace StarterAssets
         private Quaternion _capsuleVisualStandingLocalRotation;
         private System.Type _waterZoneType;
         private System.Reflection.MethodInfo _waterContainsPointMethod;
+        private float _footstepTimer;
+        private float _swimExitGraceTimer;
+        private bool _footstepAudioConfigured;
 
 #if ENABLE_INPUT_SYSTEM
         private PlayerInput _playerInput;
@@ -160,6 +180,7 @@ namespace StarterAssets
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
             RotationSpeed = Mathf.Clamp(PlayerPrefs.GetFloat("settings.mouseSensitivity", RotationSpeed), 0.25f, 4.0f);
+            EnsureFootstepAudioSource();
         }
 
         private void Update()
@@ -168,6 +189,7 @@ namespace StarterAssets
             UpdateCrouch();
             JumpAndGravity();
             Move();
+            UpdateFootsteps(Time.deltaTime);
         }
 
         private void LateUpdate()
@@ -258,7 +280,7 @@ namespace StarterAssets
 
         private void UpdateCrouch()
         {
-            IsSwimming = IsPlayerTouchingWater();
+            UpdateSwimmingState();
             bool wantsCrouch = !IsSwimming && IsCrouchPressed();
 
             if (!wantsCrouch && IsCrouching && !CanStandUp())
@@ -270,7 +292,7 @@ namespace StarterAssets
 
             float targetHeight = IsSwimming ? SwimHeight : (IsCrouching ? CrouchHeight : _standingHeight);
             Vector3 targetCenter = IsSwimming ? GetLoweredControllerCenter(targetHeight) : (IsCrouching ? _crouchingCenter : _standingCenter);
-            float blend = Time.deltaTime * CrouchTransitionSpeed;
+            float blend = 1f - Mathf.Exp(-CrouchTransitionSpeed * Time.deltaTime);
 
             _controller.height = Mathf.Lerp(_controller.height, targetHeight, blend);
             _controller.center = Vector3.Lerp(_controller.center, targetCenter, blend);
@@ -306,7 +328,54 @@ namespace StarterAssets
                 return true;
             }
 
+            if (_controller != null)
+            {
+                float halfHeight = _controller.height * 0.5f;
+                Vector3 bottomPoint = transform.position + _controller.center + Vector3.down * halfHeight;
+                Vector3 topPoint = transform.position + _controller.center + Vector3.up * halfHeight;
+                if (IsPointInWater(bottomPoint) || IsPointInWater(topPoint))
+                {
+                    return true;
+                }
+            }
+
             return CinemachineCameraTarget != null && IsPointInWater(CinemachineCameraTarget.transform.position);
+        }
+
+        private void UpdateSwimmingState()
+        {
+            bool bodyIsInWater = IsPlayerInWaterForSwimming();
+            if (bodyIsInWater)
+            {
+                IsSwimming = true;
+                _swimExitGraceTimer = Mathf.Max(0f, SwimExitGraceTime);
+                return;
+            }
+
+            if (IsSwimming && _swimExitGraceTimer > 0f)
+            {
+                _swimExitGraceTimer -= Time.deltaTime;
+                return;
+            }
+
+            IsSwimming = false;
+        }
+
+        private bool IsPlayerInWaterForSwimming()
+        {
+            Vector3 centerPoint = transform.position + (_controller != null ? _standingCenter : Vector3.up);
+            if (IsPointInWater(centerPoint))
+            {
+                return true;
+            }
+
+            if (_controller == null)
+            {
+                return false;
+            }
+
+            Vector3 lowerBodyPoint = centerPoint + Vector3.down * (_standingHeight * 0.25f);
+            return IsPointInWater(lowerBodyPoint);
         }
 
         private bool IsPointInWater(Vector3 point)
@@ -325,6 +394,122 @@ namespace StarterAssets
             object result = _waterContainsPointMethod.Invoke(null, new object[] { point });
             return result is bool isInWater && isInWater;
         }
+
+        private void EnsureFootstepAudioSource()
+        {
+            AssignDefaultFootstepClipInEditor();
+            if (playerFootstepClip == null)
+            {
+                return;
+            }
+
+            if (footstepAudioSource == null)
+            {
+                AudioSource[] sources = GetComponentsInChildren<AudioSource>(true);
+                foreach (AudioSource source in sources)
+                {
+                    if (source != null && source.clip != null && source.clip.name == playerFootstepClip.name)
+                    {
+                        footstepAudioSource = source;
+                        break;
+                    }
+                }
+            }
+
+            if (footstepAudioSource == null)
+            {
+                footstepAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+
+            if (_footstepAudioConfigured && footstepAudioSource.clip == playerFootstepClip)
+            {
+                return;
+            }
+
+            footstepAudioSource.clip = playerFootstepClip;
+            footstepAudioSource.loop = false;
+            footstepAudioSource.playOnAwake = false;
+            footstepAudioSource.spatialBlend = 0f;
+            footstepAudioSource.mute = false;
+            footstepAudioSource.ignoreListenerPause = true;
+            footstepAudioSource.priority = 48;
+            _footstepAudioConfigured = true;
+        }
+
+        private void UpdateFootsteps(float deltaTime)
+        {
+            EnsureFootstepAudioSource();
+            if (!ShouldPlayFootsteps())
+            {
+                _footstepTimer = 0f;
+                if (footstepAudioSource != null && footstepAudioSource.isPlaying)
+                {
+                    footstepAudioSource.Stop();
+                }
+
+                return;
+            }
+
+            _footstepTimer -= deltaTime;
+            if (_footstepTimer > 0f || footstepAudioSource.isPlaying)
+            {
+                return;
+            }
+
+            bool isSprinting = _input != null && _input.sprint && !IsCrouching;
+            float interval = IsCrouching ? crouchStepInterval : (isSprinting ? sprintStepInterval : walkStepInterval);
+            float volume = IsCrouching ? crouchFootstepVolume : (isSprinting ? sprintFootstepVolume : walkFootstepVolume);
+
+            footstepAudioSource.pitch = Random.Range(0.96f, 1.04f) * (isSprinting ? 1.08f : 1f);
+            footstepAudioSource.volume = volume;
+            footstepAudioSource.Play();
+            _footstepTimer = Mathf.Max(0.08f, interval);
+        }
+
+        private bool ShouldPlayFootsteps()
+        {
+            if (playerFootstepClip == null || footstepAudioSource == null || _controller == null || _input == null)
+            {
+                return false;
+            }
+
+            if (!Grounded || IsSwimming || IsPlayerTouchingWater() || _input.move == Vector2.zero)
+            {
+                return false;
+            }
+
+            Vector3 horizontalVelocity = new Vector3(_controller.velocity.x, 0f, _controller.velocity.z);
+            return horizontalVelocity.magnitude >= minFootstepSpeed;
+        }
+
+        private void AssignDefaultFootstepClipInEditor()
+        {
+#if UNITY_EDITOR
+            if (playerFootstepClip != null)
+            {
+                return;
+            }
+
+            playerFootstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/music and sounds/Player_footsteps.mp3");
+            if (playerFootstepClip != null)
+            {
+                return;
+            }
+
+            string[] guids = AssetDatabase.FindAssets("Player_footsteps t:AudioClip", new[] { "Assets/music and sounds" });
+            if (guids.Length > 0)
+            {
+                playerFootstepClip = AssetDatabase.LoadAssetAtPath<AudioClip>(AssetDatabase.GUIDToAssetPath(guids[0]));
+            }
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            AssignDefaultFootstepClipInEditor();
+        }
+#endif
 
         private bool IsCrouchPressed()
         {
